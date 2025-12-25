@@ -1,46 +1,87 @@
-.spin-wheel-container {
+.spin-wheel-container.v2 {
   position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
 }
 
-.spin-wheel-canvas {
-  max-width: 100%;
-  height: auto;
+.spin-wheel-frame {
+  position: relative;
+  display: grid;
+  place-items: center;
+}
+
+.spin-wheel-rotator {
+  position: relative;
   border-radius: 50%;
-  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
-  transition: transform 0.1s ease-out;
+  will-change: transform;
+  transition-property: transform;
+  transition-timing-function: cubic-bezier(0.12, 0.9, 0.18, 1);
+  box-shadow: 0 18px 60px rgba(0, 0, 0, 0.25);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.25), rgba(255, 255, 255, 0) 55%);
+}
+
+.spin-wheel-svg {
+  display: block;
+  border-radius: 50%;
+}
+
+/* Pointer OUTSIDE the wheel, pointing into it */
+.spin-wheel-pointer {
+  position: absolute;
+  top: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 0;
+  height: 0;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 24px solid #667eea; /* triangle points DOWN */
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+  z-index: 5;
+}
+
+.spin-wheel-pointer::after {
+  /* White outline */
+  content: '';
+  position: absolute;
+  top: -24px;
+  left: -16px;
+  width: 0;
+  height: 0;
+  border-left: 16px solid transparent;
+  border-right: 16px solid transparent;
+  border-top: 24px solid rgba(255, 255, 255, 0.9);
+  transform: scale(1.06);
+  z-index: -1;
 }
 
 .spinning-overlay {
   position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.spinning-overlay::before {
+  content: 'Spinning...';
   background: rgba(102, 126, 234, 0.9);
   color: white;
-  padding: 15px 30px;
-  border-radius: 25px;
-  font-weight: 600;
-  font-size: 1.2rem;
-  z-index: 10;
+  padding: 12px 26px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 1.05rem;
   animation: pulse 1s ease-in-out infinite;
 }
 
 @keyframes pulse {
   0%, 100% {
     opacity: 0.9;
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
   }
   50% {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1.05);
-  }
-}
-
-@media (max-width: 480px) {
-  .spin-wheel-canvas {
-    max-width: 90%;
+    transform: scale(1.05);
   }
 }
