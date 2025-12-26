@@ -136,7 +136,7 @@
 
 @media (max-width: 480px) {
   .spin-wheel-container.v2 {
-    padding: 5px 0;
+    padding: 3px 0;
     margin: 0 auto;
     width: 100%;
     max-width: 100%;
@@ -154,7 +154,7 @@
   }
 
   .spin-wheel-rotator {
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
     margin: 0 auto;
     flex-shrink: 0;
   }

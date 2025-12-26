@@ -14,11 +14,19 @@ function SpinWheel({ restaurants, spinning, result }) {
   }, [restaurants]);
 
   const wheelGeom = useMemo(() => {
-    // More responsive sizing for mobile phones
-    // Account for container padding: typically 15-20px on mobile each side
+    // More responsive sizing for mobile phones - ensure it fits on screen
     const screenWidth = window.innerWidth;
-    const containerPadding = screenWidth <= 480 ? 30 : 80; // Account for container padding (15px each side on mobile)
+    const screenHeight = window.innerHeight;
+    
+    // Account for all spacing: container padding, header, buttons, etc.
+    const containerPadding = screenWidth <= 480 ? 40 : 80; // Account for container padding (20px each side on mobile)
+    const headerSpace = screenWidth <= 480 ? 80 : 120; // Space for header and subtitle
+    const buttonSpace = screenWidth <= 480 ? 80 : 100; // Space for spin button and other elements
+    const extraMargin = screenWidth <= 480 ? 40 : 60; // Extra margin for safety
+    
+    // Calculate available space - use the smaller of width or height constraints
     const availableWidth = screenWidth - containerPadding;
+    const availableHeight = screenHeight - headerSpace - buttonSpace - extraMargin;
     
     const isSmallMobile = screenWidth <= 360;
     const isMobile = screenWidth <= 480;
@@ -26,23 +34,27 @@ function SpinWheel({ restaurants, spinning, result }) {
     
     let wheelSize;
     if (isSmallMobile) {
-      // Very small phones: use ~80% of available width
-      wheelSize = Math.min(280, Math.floor(availableWidth * 0.80));
+      // Very small phones: use ~65% of available width, ensure it fits in height
+      const widthBased = Math.floor(availableWidth * 0.65);
+      const heightBased = Math.floor(availableHeight * 0.9);
+      wheelSize = Math.min(240, widthBased, heightBased);
     } else if (isMobile) {
-      // Regular mobile phones (including iPhone 14 Pro Max): use ~75% of available width
-      wheelSize = Math.min(300, Math.floor(availableWidth * 0.75));
+      // Regular mobile phones: use ~60% of available width, ensure it fits in height
+      const widthBased = Math.floor(availableWidth * 0.60);
+      const heightBased = Math.floor(availableHeight * 0.85);
+      wheelSize = Math.min(260, widthBased, heightBased);
     } else if (isLargeMobile) {
       // Large mobile phones / small tablets
-      wheelSize = Math.min(380, Math.floor(availableWidth * 0.85));
+      wheelSize = Math.min(340, Math.floor(availableWidth * 0.75));
     } else {
       // Tablets and desktop: original sizing
       wheelSize = Math.min(420, availableWidth);
     }
     
     // Scale pointer and padding for mobile
-    const pointerSize = isMobile ? 14 : 20;
-    const pointerGap = isMobile ? 6 : 10;
-    const padding = isMobile ? 8 : 14;
+    const pointerSize = isMobile ? 12 : 20;
+    const pointerGap = isMobile ? 5 : 10;
+    const padding = isMobile ? 6 : 14;
     const extra = pointerSize + pointerGap + padding;
     
     return {

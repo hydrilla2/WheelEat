@@ -192,7 +192,7 @@ header h1 {
   }
 
   .container {
-    padding: 15px;
+    padding: 12px;
     border-radius: 12px;
   }
 
@@ -202,30 +202,31 @@ header h1 {
   }
 
   header h1 {
-    font-size: 1.3rem;
-    margin-bottom: 4px;
+    font-size: 1.2rem;
+    margin-bottom: 3px;
   }
 
   .subtitle {
-    font-size: 0.8rem;
-    margin-bottom: 8px;
+    font-size: 0.75rem;
+    margin-bottom: 5px;
   }
 
   header {
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    padding: 0 5px;
   }
 
   .main-content {
-    gap: 20px;
+    gap: 15px;
   }
 
   .selection-panel {
-    gap: 20px;
+    gap: 15px;
   }
 
   .wheel-panel {
-    gap: 18px;
-    margin-bottom: 8px;
+    gap: 12px;
+    margin-bottom: 5px;
     width: 100%;
     max-width: 100%;
     overflow: hidden;
@@ -233,12 +234,12 @@ header h1 {
   }
 
   .spin-button {
-    font-size: 1rem;
-    padding: 14px 24px;
+    font-size: 0.95rem;
+    padding: 12px 20px;
     width: 100%;
     max-width: 100%;
     min-width: unset;
-    margin-top: 8px;
+    margin-top: 5px;
   }
 
   .error-message {
