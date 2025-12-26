@@ -6,7 +6,7 @@ import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
+const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wheeleat-ml5qmrsel-ybtan6666s-projects.vercel.app';
 
 function App() {
   const [mallId, setMallId] = useState('sunway_square');
