@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
+import Login from './components/Login';
 import SpinWheel from './components/SpinWheel';
 import CategorySelector from './components/CategorySelector';
 import DietarySelector from './components/DietarySelector';
@@ -8,7 +9,10 @@ import ResultModal from './components/ResultModal';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-function App() {
+/**
+ * Main App Component (WheelEat functionality)
+ */
+function WheelEatApp() {
   const [mallId, setMallId] = useState('sunway_square');
   const [malls, setMalls] = useState([]);
   const [mallsLoading, setMallsLoading] = useState(true);
@@ -254,6 +258,59 @@ function App() {
       )}
     </div>
   );
+}
+
+/**
+ * Root App Component with Login
+ * Shows login page if user is not logged in, otherwise shows main app
+ */
+function App() {
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  // Check if user is already logged in (on page load)
+  useEffect(() => {
+    const savedUser = localStorage.getItem('wheeleat_user');
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        setUser(userData);
+      } catch (error) {
+        console.error('Error parsing user data:', error);
+        localStorage.removeItem('wheeleat_user');
+      }
+    }
+    setLoading(false);
+  }, []);
+
+  // Handle login success
+  const handleLogin = (userData) => {
+    setUser(userData);
+    // User data is already saved in localStorage by Login component
+  };
+
+  // Show loading state briefly
+  if (loading) {
+    return (
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'center', 
+        alignItems: 'center', 
+        height: '100vh',
+        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
+      }}>
+        <div style={{ color: 'white', fontSize: '1.2em' }}>Loading...</div>
+      </div>
+    );
+  }
+
+  // Show login page if user is not logged in
+  if (!user) {
+    return <Login onLogin={handleLogin} />;
+  }
+
+  // Show main app if user is logged in
+  return <WheelEatApp />;
 }
 
 export default App;
