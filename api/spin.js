@@ -4,18 +4,7 @@
 import { getRestaurantsByCategories } from './lib/restaurants.js';
 import supabase from './lib/supabase.js';
 
-export default async function handler(req, res) {
-  // Set CORS headers first - always set them
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
-  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
-  res.setHeader('Access-Control-Max-Age', '86400');
-
-  // Handle preflight requests
-  if (req.method === 'OPTIONS') {
-    return res.status(200).end();
-  }
-
+async function handler(req, res) {
   // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -100,5 +89,22 @@ export default async function handler(req, res) {
       message: error.message,
     });
   }
+}
+
+// Export with CORS wrapper
+export default async function(req, res) {
+  // Set CORS headers FIRST - before anything else
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.setHeader('Access-Control-Max-Age', '86400');
+
+  // Handle preflight OPTIONS requests
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
+  // Call the actual handler
+  return await handler(req, res);
 }
 
