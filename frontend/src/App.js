@@ -8,6 +8,9 @@ import ResultModal from './components/ResultModal';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'https://wheeleat-ml5qmrsel-ybtan6666s-projects.vercel.app';
 
+// Debug: Log API URL (remove in production)
+console.log('API_BASE_URL:', API_BASE_URL);
+
 function App() {
   const [mallId, setMallId] = useState('sunway_square');
   const [malls, setMalls] = useState([]);
@@ -82,13 +85,23 @@ function App() {
 
   // Load available malls on mount
   useEffect(() => {
-    fetch(`${API_BASE_URL}/api/malls`)
-      .then(res => res.json())
+    const url = `${API_BASE_URL}/api/malls`;
+    console.log('Fetching malls from:', url);
+    
+    fetch(url)
+      .then(res => {
+        console.log('Malls response status:', res.status, res.statusText);
+        if (!res.ok) {
+          throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+        }
+        return res.json();
+      })
       .then(data => {
-        setMalls(data.malls);
+        console.log('Malls data received:', data);
+        setMalls(data.malls || []);
         setMallsLoading(false);
         // Set default mall if available
-        if (data.malls.length > 0 && !mallId) {
+        if (data.malls && data.malls.length > 0 && !mallId) {
           setMallId(data.malls[0].id);
         }
       })
@@ -101,9 +114,21 @@ function App() {
   // Load categories when mall changes
   useEffect(() => {
     if (mallId) {
-      fetch(`${API_BASE_URL}/api/categories?mall_id=${encodeURIComponent(mallId)}`)
-        .then(res => res.json())
-        .then(data => setCategories(data.categories))
+      const url = `${API_BASE_URL}/api/categories?mall_id=${encodeURIComponent(mallId)}`;
+      console.log('Fetching categories from:', url);
+      
+      fetch(url)
+        .then(res => {
+          console.log('Categories response status:', res.status, res.statusText);
+          if (!res.ok) {
+            throw new Error(`HTTP ${res.status}: ${res.statusText}`);
+          }
+          return res.json();
+        })
+        .then(data => {
+          console.log('Categories data received:', data);
+          setCategories(data.categories || []);
+        })
         .catch(err => {
           console.error('Failed to load categories:', err);
           setCategories([]);
