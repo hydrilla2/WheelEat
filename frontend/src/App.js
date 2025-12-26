@@ -1,19 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
-import Login from './components/Login';
 import SpinWheel from './components/SpinWheel';
 import CategorySelector from './components/CategorySelector';
 import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
-import AdSense from './components/AdSense';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 
-/**
- * Main App Component (WheelEat functionality)
- */
-function WheelEatApp() {
+function App() {
   const [mallId, setMallId] = useState('sunway_square');
   const [malls, setMalls] = useState([]);
   const [mallsLoading, setMallsLoading] = useState(true);
@@ -201,12 +196,6 @@ function WheelEatApp() {
     <div className="App">
       <div className="container">
         <header>
-          <AdSense 
-            slotId={process.env.REACT_APP_ADSENSE_HEADER_SLOT} 
-            className="ad-container-header" 
-            format="horizontal" 
-            label="Header Ad"
-          />
           <h1>🍽️ WheelEat</h1>
           <p className="subtitle">Spin the wheel to decide where to eat!</p>
         </header>
@@ -253,14 +242,6 @@ function WheelEatApp() {
             )}
           </div>
         </div>
-        
-        {/* Bottom Ad */}
-        <AdSense 
-          slotId={process.env.REACT_APP_ADSENSE_BOTTOM_SLOT || process.env.REACT_APP_ADSENSE_CONTENT_SLOT} 
-          className="ad-container-bottom" 
-          format="horizontal" 
-          label="Bottom Ad"
-        />
       </div>
       
       {/* Result Modal - shows after spin completes */}
@@ -273,59 +254,6 @@ function WheelEatApp() {
       )}
     </div>
   );
-}
-
-/**
- * Root App Component with Login
- * Shows login page if user is not logged in, otherwise shows main app
- */
-function App() {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  // Check if user is already logged in (on page load)
-  useEffect(() => {
-    const savedUser = localStorage.getItem('wheeleat_user');
-    if (savedUser) {
-      try {
-        const userData = JSON.parse(savedUser);
-        setUser(userData);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        localStorage.removeItem('wheeleat_user');
-      }
-    }
-    setLoading(false);
-  }, []);
-
-  // Handle login success
-  const handleLogin = (userData) => {
-    setUser(userData);
-    // User data is already saved in localStorage by Login component
-  };
-
-  // Show loading state briefly
-  if (loading) {
-    return (
-      <div style={{ 
-        display: 'flex', 
-        justifyContent: 'center', 
-        alignItems: 'center', 
-        height: '100vh',
-        background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)'
-      }}>
-        <div style={{ color: 'white', fontSize: '1.2em' }}>Loading...</div>
-      </div>
-    );
-  }
-
-  // Show login page if user is not logged in
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
-  }
-
-  // Show main app if user is logged in
-  return <WheelEatApp />;
 }
 
 export default App;

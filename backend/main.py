@@ -21,7 +21,13 @@ app = FastAPI(title="WheelEat API", version="1.0.0")
 # CORS middleware to allow frontend to connect
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://localhost:5173", "http://127.0.0.1:3000"],
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:5173",
+        "http://127.0.0.1:3000",
+        "http://127.0.0.1:5173",
+        "http://localhost:8000",  # Allow Swagger UI
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -165,24 +171,6 @@ def export_spins(db: Session = Depends(get_db)):
             "restaurant_name": spin.restaurant_name,
             "restaurant_unit": spin.restaurant_unit,
             "restaurant_floor": spin.restaurant_floor,
-            "category": spin.category,
-            "dietary_need": spin.dietary_need,
-            "timestamp": spin.timestamp.isoformat(),
-            "mall_id": spin.mall_id,
-            "selected_categories": json.loads(spin.selected_categories) if spin.selected_categories else []
-        }
-        for spin in spins
-    ]
-
-
-@app.get("/api/spins/export")
-def export_spins(db: Session = Depends(get_db)):
-    """Export all spin data for analytics"""
-    spins = db.query(SpinLog).order_by(SpinLog.timestamp.desc()).all()
-    
-    return [
-        {
-            "id": spin.id,
             "category": spin.category,
             "dietary_need": spin.dietary_need,
             "timestamp": spin.timestamp.isoformat(),
