@@ -1,0 +1,146 @@
+﻿/* Login Container */
+.login-container {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 20px;
+}
+
+.login-box {
+  background: white;
+  border-radius: 20px;
+  padding: 40px;
+  max-width: 400px;
+  width: 100%;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  text-align: center;
+}
+
+.login-box h1 {
+  font-size: 2.5em;
+  margin-bottom: 10px;
+  color: #333;
+  font-weight: 700;
+}
+
+.login-subtitle {
+  font-size: 1.1em;
+  color: #666;
+  margin-bottom: 30px;
+}
+
+.login-error {
+  color: #dc3545;
+  background: #f8d7da;
+  border: 1px solid #f5c6cb;
+  border-radius: 10px;
+  padding: 15px;
+  margin-bottom: 20px;
+  font-size: 0.9em;
+  line-height: 1.5;
+}
+
+/* Login Buttons Container */
+.login-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-bottom: 20px;
+}
+
+/* Base Button Styles */
+.login-btn {
+  width: 100%;
+  padding: 14px 20px;
+  border: 2px solid #e0e0e0;
+  border-radius: 12px;
+  background: white;
+  font-size: 1em;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  position: relative;
+}
+
+.login-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.login-btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.login-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.login-btn.loading {
+  opacity: 0.7;
+}
+
+/* Button Icons */
+.btn-icon {
+  font-size: 1.3em;
+}
+
+.btn-text {
+  flex: 1;
+  text-align: center;
+}
+
+/* Google Button */
+.google-btn {
+  border-color: #4285f4;
+  color: #4285f4;
+}
+
+.google-btn:hover:not(:disabled) {
+  background: #4285f4;
+  color: white;
+  border-color: #4285f4;
+}
+
+/* Guest Button */
+.guest-btn {
+  border-color: #6c757d;
+  color: #6c757d;
+}
+
+.guest-btn:hover:not(:disabled) {
+  background: #6c757d;
+  color: white;
+  border-color: #6c757d;
+}
+
+/* Login Note */
+.login-note {
+  font-size: 0.85em;
+  color: #999;
+  margin-top: 20px;
+  line-height: 1.5;
+}
+
+/* Responsive Design */
+@media (max-width: 480px) {
+  .login-box {
+    padding: 30px 20px;
+  }
+
+  .login-box h1 {
+    font-size: 2em;
+  }
+
+  .login-btn {
+    padding: 12px 16px;
+    font-size: 0.95em;
+  }
+}
+
