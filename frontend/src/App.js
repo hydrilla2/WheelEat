@@ -13,7 +13,7 @@ const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:8000';
 /**
  * Main App Component (WheelEat functionality)
  */
-function WheelEatApp() {
+function WheelEatApp({ user, onLogout }) {
   const [mallId, setMallId] = useState('sunway_square');
   const [malls, setMalls] = useState([]);
   const [mallsLoading, setMallsLoading] = useState(true);
@@ -207,7 +207,42 @@ function WheelEatApp() {
             format="horizontal" 
             label="Header Ad"
           />
-          <h1>🍽️ WheelEat</h1>
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              gap: '12px',
+            }}
+          >
+            <div style={{ flex: 1 }} />
+            <h1 style={{ margin: 0, flex: 'none' }}>🍽️ WheelEat</h1>
+            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
+              {user?.name ? (
+                <span style={{ fontSize: '0.9rem', color: '#667eea', fontWeight: 600, whiteSpace: 'nowrap' }}>
+                  {user.name}
+                </span>
+              ) : null}
+              <button
+                type="button"
+                onClick={onLogout}
+                style={{
+                  background: 'transparent',
+                  border: '1px solid rgba(102,126,234,0.45)',
+                  color: '#667eea',
+                  padding: '8px 12px',
+                  borderRadius: '999px',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  whiteSpace: 'nowrap',
+                }}
+                aria-label="Logout (clear test session)"
+                title="Logout (clear test session)"
+              >
+                Logout
+              </button>
+            </div>
+          </div>
           <p className="subtitle">Spin the wheel to decide where to eat!</p>
         </header>
 
@@ -285,8 +320,23 @@ function App() {
 
   // Check if user is already logged in (on page load)
   useEffect(() => {
+    // Testing helpers:
+    // - ?resetAuth=1  -> clears saved user and shows login
+    // - ?forceLogin=1 -> ignores saved user and shows login (does NOT clear)
+    const params = new URLSearchParams(window.location.search);
+    const resetAuth = params.get('resetAuth') === '1';
+    const forceLogin = params.get('forceLogin') === '1';
+
+    if (resetAuth) {
+      localStorage.removeItem('wheeleat_user');
+      params.delete('resetAuth');
+      const newQs = params.toString();
+      const newUrl = `${window.location.pathname}${newQs ? `?${newQs}` : ''}${window.location.hash || ''}`;
+      window.history.replaceState({}, '', newUrl);
+    }
+
     const savedUser = localStorage.getItem('wheeleat_user');
-    if (savedUser) {
+    if (savedUser && !forceLogin && !resetAuth) {
       try {
         const userData = JSON.parse(savedUser);
         setUser(userData);
@@ -302,6 +352,11 @@ function App() {
   const handleLogin = (userData) => {
     setUser(userData);
     // User data is already saved in localStorage by Login component
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem('wheeleat_user');
+    setUser(null);
   };
 
   // Show loading state briefly
@@ -325,7 +380,7 @@ function App() {
   }
 
   // Show main app if user is logged in
-  return <WheelEatApp />;
+  return <WheelEatApp user={user} onLogout={handleLogout} />;
 }
 
 export default App;

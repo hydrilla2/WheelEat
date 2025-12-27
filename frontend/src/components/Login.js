@@ -45,6 +45,7 @@ function GoogleLoginButton({ onLogin }) {
   const [loading, setLoading] = useState(false);
 
   const googleLogin = useGoogleLogin({
+    scope: 'openid email profile',
     onSuccess: async (tokenResponse) => {
       setLoading(true);
       try {
@@ -52,7 +53,14 @@ function GoogleLoginButton({ onLogin }) {
         const userInfoResponse = await fetch(
           `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${tokenResponse.access_token}`
         );
+        if (!userInfoResponse.ok) {
+          const body = await userInfoResponse.text();
+          throw new Error(`Failed to fetch Google user profile (${userInfoResponse.status}): ${body}`);
+        }
         const userInfo = await userInfoResponse.json();
+        if (!userInfo?.sub) {
+          throw new Error('Google user profile missing "sub" (Google user id). Check OAuth configuration.');
+        }
 
         const googleUser = {
           id: userInfo.sub,
@@ -120,7 +128,7 @@ function Login({ onLogin }) {
           <p className="login-error">
             Google Client ID not found. Please add REACT_APP_GOOGLE_CLIENT_ID to .env file.
             <br />
-            See LOGIN_SETUP_GUIDE_SIMPLE.md for instructions.
+            See GOOGLE_OAUTH_SETUP.md for instructions.
           </p>
           <GuestLogin onLogin={onLogin} />
         </div>
