@@ -1,74 +1,74 @@
 // Restaurant data for multiple malls
-// Format: [Restaurant Name, Unit Number, Floor, Category]
+// Format: [Restaurant Name, Unit Number, Floor, Category, Halal Status]
 
 export const MALL_RESTAURANTS = {
   sunway_square: [
-    ["103 Coffee", "L1-07", "L1", "Coffee & Cafes"],
-    ["A'Decade", "L2-22", "L2", "Local & Malaysian"],
-    ["Armoury Steakhouse", "LG-05", "LG", "Western & International"],
-    ["BESTORE", "L1-39", "L1", "Snacks & Specialty Store"],
-    ["Black Canyon", "L1-40", "L1", "Western & International"],
-    ["Ba Shu Jia Yan", "LG-09 & LG-10", "LG", "Chinese & Taiwanese"],
-    ["Beutea", "LG1-02", "LG1", "Tea & Beverages"],
-    ["Bread History", "LG1-25", "LG1", "Bakery & Pastry"],
-    ["Chagee", "L1-04", "L1", "Tea & Beverages"],
-    ["Coffee Bean", "L1-31", "L1", "Coffee & Cafes"],
-    ["Christine's Bakery Cafe", "L1-42", "L1", "Bakery & Pastry"],
-    ["CHUCHAT", "L1-06", "L1", "Tea & Beverages"],
-    ["ChaPanda", "L2-01", "L2", "Tea & Beverages"],
-    ["CU Mart", "L2-28", "L2", "Korean & Convenience"],
-    ["Come Buy Yakiniku", "LG-01", "LG", "Japanese Cuisine"],
-    ["Count (Flower Drum)", "LG-06 & LG-07", "LG", "Chinese & Taiwanese"],
-    ["Chatramue", "LG1-18", "LG1", "Tea & Beverages"],
-    ["DOZO", "L1-41", "L1", "Japanese Cuisine"],
-    ["Empire Sushi", "LG1-22", "LG1", "Japanese Cuisine"],
-    ["Far Coffee", "L2-18A", "L2", "Coffee & Cafes"],
-    ["Fong Woh Tong", "LG1-23", "LG1", "Chinese & Taiwanese"],
-    ["Gong Luck Cafe", "L1-30", "L1", "Local & Malaysian"],
-    ["Gokoku Japanese Bakery", "L1-44", "L1", "Bakery & Pastry"],
-    ["Gong Cha", "L2-02", "L2", "Tea & Beverages"],
-    ["Hock Kee Kopitiam", "L1-43", "L1", "Local & Malaysian"],
-    ["Han Bun Sik", "L2-12", "L2", "Korean Cuisine"],
-    ["Happy Potato", "L2-04", "L2", "Snacks & Desserts"],
-    ["I'm Bagel", "L2-29", "L2", "Western & International"],
-    ["I LIKE & Yogurt In A Can", "L2-03", "L2", "Snacks & Desserts"],
-    ["JP & CO", "L1-45", "L1", "Western & International"],
-    ["Kanteen", "L1-08", "L1", "Local & Malaysian"],
-    ["Kenangan Coffee", "L2-08", "L2", "Coffee & Cafes"],
-    ["Kedai Kopi Malaya", "LG1-20", "LG1", "Local & Malaysian"],
-    ["Kha Coffee Roaster", "LG1-14", "LG1", "Coffee & Cafes"],
-    ["LLAO LLAO", "L1-14", "L1", "Snacks & Desserts"],
-    ["Luckin", "L1-05", "L1", "Coffee & Cafes"],
-    ["Manjoe", "L1-17", "L1", "Chinese & Taiwanese"],
-    ["Mix.Store", "LG-04", "LG", "Snacks & Specialty Store"],
-    ["Mr. Wu", "LG-11", "LG", "Chinese & Taiwanese"],
-    ["Missy Sushi", "LG-06", "LG", "Japanese Cuisine"],
-    ["Nasi Lemak Shop", "LG1-16", "LG1", "Local & Malaysian"],
-    ["Nine Dragon Char Chan Teng (Kowloon Cafe)", "LG1-13", "LG1", "Chinese & Taiwanese"],
-    ["Nippon Sushi", "LG1-01", "LG1", "Japanese Cuisine"],
-    ["Odon Beyond", "L1-03", "L1", "Japanese Cuisine"],
-    ["One Dish One Taste", "LG1-12B", "LG1", "Chinese & Taiwanese"],
-    ["Pak Curry", "LG1-26", "LG1", "Local & Malaysian"],
-    ["Ramen Mob", "L1-12", "L1", "Japanese Cuisine"],
-    ["Richeese Factory", "LG1-15", "LG1", "Fast Food"],
-    ["Sweetie", "LG1-24", "LG1", "Snacks & Desserts"],
-    ["Salad Atelier", "L1-01", "L1", "Western & International"],
-    ["Super Matcha", "L1-20", "L1", "Tea & Beverages"],
-    ["Shabuyaki by Nippon Sushi", "LG-12 & LG-13", "LG", "Japanese Cuisine"],
-    ["Stuff'D", "LG1-27", "LG1", "Western & International"],
-    ["Subway", "LG1-21", "LG1", "Fast Food"],
-    ["The Public House", "L1-09", "L1", "Western & International"],
-    ["Tealive Plus", "L2-30", "L2", "Tea & Beverages"],
-    ["Tang Gui Fei Tanghulu", "L2-17", "L2", "Snacks & Desserts"],
-    ["The Walking Hotpot Signature", "L2-23", "L2", "Chinese & Taiwanese"],
-    ["The Chicken Rice Shop", "LG1-10", "LG1", "Local & Malaysian"],
-    ["Village Grocer", "LG1-05 to LG1-09", "LG1", "Supermarket"],
-    ["Yellow Bento", "L2-01", "L2", "Japanese Cuisine"],
-    ["Yonny", "L1-32", "L1", "Chinese & Taiwanese"],
-    ["Yama by Hojichaya", "L2-10A", "L2", "Japanese Cuisine"],
-    ["Yogurt Planet", "LG1-19", "LG1", "Snacks & Desserts"],
-    ["Zus Coffee", "L1-02", "L1", "Coffee & Cafes"],
-    ["Zok Noodle House", "L2-24", "L2", "Chinese & Taiwanese"],
+    ["103 Coffee", "L1-07", "LG", "Coffee & Cafes", false],
+    ["A'Decade", "L2-22", "L2", "Local & Malaysian", true],
+    ["Armoury Steakhouse", "LG-05", "LG", "Western & International", false],
+    ["BESTORE", "L1-39", "L1", "Snacks & Specialty Store", false],
+    ["Black Canyon", "L1-40", "L1", "Western & International", true],
+    ["Ba Shu Jia Yan", "LG-09 & LG-10", "LG", "Chinese & Taiwanese", false],
+    ["Beutea", "LG1-02", "LG1", "Tea & Beverages", true],
+    ["Bread History", "LG1-25", "LG1", "Bakery & Pastry", true],
+    ["Chagee", "L1-04", "L1", "Tea & Beverages", true],
+    ["Coffee Bean", "L1-31", "L1", "Coffee & Cafes", true],
+    ["Christine's Bakery Cafe", "L1-42", "L1", "Bakery & Pastry", true],
+    ["CHUCHAT", "L1-06", "L1", "Tea & Beverages", true],
+    ["ChaPanda", "L2-01", "L2", "Tea & Beverages", true],
+    ["CU Mart", "L2-28", "L2", "Korean & Convenience", false],
+    ["Come Buy Yakiniku", "LG-01", "LG", "Japanese Cuisine", false],
+    ["Count (Flower Drum)", "LG-06 & LG-07", "LG", "Chinese & Taiwanese", false],
+    ["Chatramue", "LG1-18", "LG1", "Tea & Beverages", true],
+    ["DOZO", "L1-41", "L1", "Japanese Cuisine", false],
+    ["Empire Sushi", "LG1-22", "LG1", "Japanese Cuisine", true],
+    ["Far Coffee", "L2-18A", "L2", "Coffee & Cafes", true],
+    ["Fong Woh Tong", "LG1-23", "LG1", "Chinese & Taiwanese", true],
+    ["Gong Luck Cafe", "L1-30", "L1", "Local & Malaysian", false],
+    ["Gokoku Japanese Bakery", "L1-44", "L1", "Bakery & Pastry", true],
+    ["Gong Cha", "L2-02", "L2", "Tea & Beverages", true],
+    ["Hock Kee Kopitiam", "L1-43", "L1", "Local & Malaysian", true],
+    ["Han Bun Sik", "L2-12", "L2", "Korean Cuisine", false],
+    ["Happy Potato", "L2-04", "L2", "Snacks & Desserts", true],
+    ["I'm Bagel", "L2-29", "L2", "Western & International", true],
+    ["I LIKE & Yogurt In A Can", "L2-03", "L2", "Snacks & Desserts", true],
+    ["JP & CO", "L1-45", "L1", "Western & International", true],
+    ["Kanteen", "L1-08", "L1", "Local & Malaysian", true],
+    ["Kenangan Coffee", "L2-08", "L2", "Coffee & Cafes", true],
+    ["Kedai Kopi Malaya", "LG1-20", "LG1", "Local & Malaysian", true],
+    ["Kha Coffee Roaster", "LG1-14", "LG1", "Coffee & Cafes", true],
+    ["LLAO LLAO", "L1-14", "L1", "Snacks & Desserts", true],
+    ["Luckin", "L1-05", "L1", "Coffee & Cafes", true],
+    ["Manjoe", "L1-17", "L1", "Chinese & Taiwanese", false],
+    ["Mix.Store", "LG-04", "LG", "Snacks & Specialty Store", false],
+    ["Mr. Wu", "LG-11", "LG", "Chinese & Taiwanese", false],
+    ["Missy Sushi", "LG-06", "LG", "Japanese Cuisine", false],
+    ["Nasi Lemak Shop", "LG1-16", "LG1", "Local & Malaysian", true],
+    ["Nine Dragon Char Chan Teng (Kowloon Cafe)", "LG1-13", "LG1", "Chinese & Taiwanese", false],
+    ["Nippon Sushi", "LG1-01", "LG1", "Japanese Cuisine", true],
+    ["Odon Beyond", "L1-03", "L1", "Japanese Cuisine", false],
+    ["One Dish One Taste", "LG1-12B", "LG1", "Chinese & Taiwanese", false],
+    ["Pak Curry", "LG1-26", "LG1", "Local & Malaysian", true],
+    ["Ramen Mob", "L1-12", "L1", "Japanese Cuisine", false],
+    ["Richeese Factory", "LG1-15", "LG1", "Fast Food", true],
+    ["Sweetie", "LG1-24", "LG1", "Snacks & Desserts", true],
+    ["Salad Atelier", "L1-01", "L1", "Western & International", true],
+    ["Super Matcha", "L1-20", "L1", "Tea & Beverages", true],
+    ["Shabuyaki by Nippon Sushi", "LG-12 & LG-13", "LG", "Japanese Cuisine", true],
+    ["Stuff'D", "LG1-27", "LG1", "Western & International", true],
+    ["Subway", "LG1-21", "LG1", "Fast Food", true],
+    ["The Public House", "L1-09", "L1", "Western & International", false],
+    ["Tealive Plus", "L2-30", "L2", "Tea & Beverages", true],
+    ["Tang Gui Fei Tanghulu", "L2-17", "L2", "Snacks & Desserts", true],
+    ["The Walking Hotpot Signature", "L2-23", "L2", "Chinese & Taiwanese", false],
+    ["The Chicken Rice Shop", "LG1-10", "LG1", "Local & Malaysian", true],
+    ["Village Grocer", "LG1-05 to LG1-09", "LG1", "Supermarket", false],
+    ["Yellow Bento", "L2-01", "L2", "Japanese Cuisine", false],
+    ["Yonny", "L1-32", "L1", "Chinese & Taiwanese", false],
+    ["Yama by Hojichaya", "L2-10A", "L2", "Japanese Cuisine", true],
+    ["Yogurt Planet", "LG1-19", "LG1", "Snacks & Desserts", true],
+    ["Zus Coffee", "L1-02", "L1", "Coffee & Cafes", true],
+    ["Zok Noodle House", "L2-24", "L2", "Chinese & Taiwanese", false],
   ],
 };
 
@@ -170,22 +170,32 @@ export function getRestaurantsByMall(mallId) {
   return MALL_RESTAURANTS[mallId] || [];
 }
 
-export function getRestaurantsByCategories(categories, mallId = "sunway_square") {
+export function getRestaurantsByCategories(categories, mallId = "sunway_square", dietaryNeed = "any") {
   const restaurants = getRestaurantsByMall(mallId);
   const matchingRestaurants = [];
   
   for (const restaurant of restaurants) {
-    const [name, unit, floor, category] = restaurant;
-    if (categories.includes(category)) {
-      const logoPath = getLogoPath(name, mallId);
-      matchingRestaurants.push({
-        name,
-        unit,
-        floor,
-        category,
-        logo: logoPath
-      });
+    const [name, unit, floor, category, isHalal] = restaurant;
+    
+    // Check if category matches
+    if (!categories.includes(category)) {
+      continue;
     }
+    
+    // Check if dietary need matches
+    if (dietaryNeed === "halal_pork_free" && !isHalal) {
+      continue;
+    }
+    
+    const logoPath = getLogoPath(name, mallId);
+    matchingRestaurants.push({
+      name,
+      unit,
+      floor,
+      category,
+      isHalal,
+      logo: logoPath
+    });
   }
   
   return matchingRestaurants;

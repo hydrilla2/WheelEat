@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "WheelEat Cloudflare Pages Functions",
   "type": "module",
-  "dependencies": {}
+  "dependencies": {
+    "@supabase/supabase-js": "^2.89.0"
+  }
 }
-

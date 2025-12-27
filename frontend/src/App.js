@@ -151,7 +151,7 @@ function WheelEatApp({ user, onLogout }) {
   useEffect(() => {
     if (selectedCategories.length > 0 && mallId) {
       const categoriesParam = selectedCategories.join(',');
-      fetch(`${API_BASE_URL}/api/restaurants?categories=${encodeURIComponent(categoriesParam)}&mall_id=${encodeURIComponent(mallId)}`)
+      fetch(`${API_BASE_URL}/api/restaurants?categories=${encodeURIComponent(categoriesParam)}&mall_id=${encodeURIComponent(mallId)}&dietary_need=${encodeURIComponent(dietaryNeed)}`)
         .then(res => res.json())
         .then(data => setRestaurants(data.restaurants))
         .catch(err => {
@@ -161,7 +161,7 @@ function WheelEatApp({ user, onLogout }) {
     } else {
       setRestaurants([]);
     }
-  }, [selectedCategories, mallId]);
+  }, [selectedCategories, mallId, dietaryNeed]);
 
   const handleSpin = async () => {
     if (selectedCategories.length === 0) {
