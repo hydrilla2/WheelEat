@@ -1,7 +1,7 @@
 // GET /api/users
-// Example endpoint that connects to Supabase and returns data
+// Example endpoint that connects to D1 and returns data
 
-import { createSupabaseClient } from './lib/supabase.js';
+import { getD1Database } from './lib/d1.js';
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
 
 export async function onRequest(context) {
@@ -18,26 +18,25 @@ export async function onRequest(context) {
   }
 
   try {
-    // Query Supabase for users
-    const supabase = createSupabaseClient(env);
-    const { data, error } = await supabase
-      .from('users')
-      .select('*')
-      .limit(10); // Limit to 10 results for demo
+    // Query D1 for users
+    const db = getD1Database(env);
+    const result = await db.prepare(
+      'SELECT * FROM users LIMIT 10'
+    ).all();
 
-    if (error) {
-      console.error('Supabase error:', error);
+    if (!result.success) {
+      console.error('Database error:', result.error);
       return jsonResponse({
         error: 'Database error',
-        message: error.message,
-        hint: 'Make sure the "users" table exists in Supabase',
+        message: result.error?.message || 'Unknown error',
+        hint: 'Make sure the "users" table exists in D1',
       }, 500);
     }
 
     return jsonResponse({
       success: true,
-      count: data ? data.length : 0,
-      users: data || [],
+      count: result.results ? result.results.length : 0,
+      users: result.results || [],
     });
   } catch (error) {
     console.error('API error:', error);

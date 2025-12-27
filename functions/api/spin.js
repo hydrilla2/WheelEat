@@ -2,7 +2,7 @@
 // Spin the wheel and return a random restaurant from selected categories
 
 import { getRestaurantsByCategories } from './lib/restaurants.js';
-import { createSupabaseClient } from './lib/supabase.js';
+import { getD1Database, generateUUID, getCurrentTimestamp } from './lib/d1.js';
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
 
 export async function onRequest(context) {
@@ -44,26 +44,33 @@ export async function onRequest(context) {
     // Random selection with equal probability
     const selectedRestaurant = availableRestaurants[Math.floor(Math.random() * availableRestaurants.length)];
 
-    // Log the spin to Supabase database
+    // Log the spin to D1 database
     try {
-      const supabase = createSupabaseClient(env);
-      const { data: spinLog, error: dbError } = await supabase
-        .from('spin_logs')
-        .insert({
-          restaurant_name: selectedRestaurant.name,
-          restaurant_unit: selectedRestaurant.unit,
-          restaurant_floor: selectedRestaurant.floor,
-          category: selectedRestaurant.category,
-          dietary_need: body.dietary_need || 'any',
-          mall_id: mallId,
-          selected_categories: JSON.stringify(selectedCategories),
-          timestamp: new Date().toISOString()
-        })
-        .select()
-        .single();
+      const db = getD1Database(env);
+      const spinId = generateUUID();
+      const timestamp = getCurrentTimestamp();
+      
+      // Insert spin log into D1
+      const result = await db.prepare(
+        `INSERT INTO spin_logs (
+          id, restaurant_name, restaurant_unit, restaurant_floor,
+          category, dietary_need, timestamp, mall_id, selected_categories, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`
+      ).bind(
+        spinId,
+        selectedRestaurant.name,
+        selectedRestaurant.unit || null,
+        selectedRestaurant.floor || null,
+        selectedRestaurant.category,
+        body.dietary_need || 'any',
+        timestamp,
+        mallId,
+        JSON.stringify(selectedCategories),
+        timestamp
+      ).run();
 
-      if (dbError) {
-        console.error('Database error:', dbError);
+      if (!result.success) {
+        console.error('Database error:', result.error);
         // Continue even if database insert fails
       }
 
@@ -72,8 +79,8 @@ export async function onRequest(context) {
         restaurant_unit: selectedRestaurant.unit,
         restaurant_floor: selectedRestaurant.floor,
         category: selectedRestaurant.category,
-        timestamp: spinLog?.timestamp || new Date().toISOString(),
-        spin_id: spinLog?.id || null,
+        timestamp: new Date(timestamp * 1000).toISOString(),
+        spin_id: spinId,
         logo: selectedRestaurant.logo
       });
     } catch (dbError) {
