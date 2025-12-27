@@ -55,6 +55,7 @@ Set these in Cloudflare Pages dashboard under Settings > Environment Variables:
 
 - `SUPABASE_URL` - Your Supabase project URL
 - `SUPABASE_ANON_KEY` - Your Supabase anonymous key
+- `REACT_APP_GOOGLE_CLIENT_ID` - Your Google OAuth Client ID (for Google Sign-In)
 
 ## API Endpoints
 
