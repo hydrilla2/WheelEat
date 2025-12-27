@@ -2,6 +2,11 @@ import React, { useState } from 'react';
 import { GoogleOAuthProvider, useGoogleLogin } from '@react-oauth/google';
 import './Login.css';
 
+// API base URL for local development.
+// - Production (Cloudflare Pages): leave unset so we use same-origin requests.
+// - Local dev (npm start): set REACT_APP_API_BASE_URL, e.g. https://wheeleat-xp5.pages.dev
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
+
 /**
  * Guest Login Component
  */
@@ -89,7 +94,7 @@ function GoogleLoginButton({ onLogin }) {
         // Save to database (upsert - create or update)
         try {
           console.log('Saving user to database...');
-          const dbResponse = await fetch('/api/users', {
+          const dbResponse = await fetch(`${API_BASE_URL}/api/users`, {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
@@ -187,7 +192,7 @@ function Login({ onLogin }) {
     <GoogleOAuthProvider clientId={googleClientId}>
       <div className="login-container">
         <div className="login-box">
-          <h1>≡ƒì╜∩╕Å WheelEat</h1>
+          <h1>≡ƒì╜∩╕Å WheelEat haha</h1>
           <p className="login-subtitle">Choose how you'd like to continue</p>
           
           <div className="login-buttons">

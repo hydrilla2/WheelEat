@@ -8,8 +8,10 @@ import ResultModal from './components/ResultModal';
 import Login from './components/Login';
 import AdSense from './components/AdSense';
 
-// Use relative paths for API calls (same domain)
-const API_BASE_URL = '';
+// API base URL for local development.
+// - Production (Cloudflare Pages): leave unset so we use same-origin requests.
+// - Local dev (npm start): set REACT_APP_API_BASE_URL, e.g. https://wheeleat-xp5.pages.dev
+const API_BASE_URL = process.env.REACT_APP_API_BASE_URL || '';
 
 /**
  * Main App Component (WheelEat functionality)
