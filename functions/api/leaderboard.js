@@ -82,9 +82,20 @@ async function fetchPlacesForQuery(query, apiKey) {
   url.searchParams.set('key', apiKey);
 
   const res = await fetch(url.toString());
-  if (!res.ok) throw new Error(`Google Places Text Search failed: HTTP ${res.status}`);
+  if (!res.ok) {
+    const text = await res.text().catch(() => '');
+    throw new Error(`Google Places Text Search failed: HTTP ${res.status} - ${text}`);
+  }
 
   const data = await res.json();
+  
+  // Check for Google API errors
+  if (data.status && data.status !== 'OK' && data.status !== 'ZERO_RESULTS') {
+    const errorMsg = data.error_message || data.status;
+    console.error(`Google Places API error for query "${query}": ${data.status} - ${errorMsg}`);
+    throw new Error(`Google Places API error: ${data.status} - ${errorMsg}`);
+  }
+  
   return Array.isArray(data?.results) ? data.results : [];
 }
 
@@ -130,6 +141,7 @@ export async function onRequest(context) {
 
     const apiKey = env.GOOGLE_PLACES_API_KEY || env.GOOGLE_API_KEY;
     if (!apiKey) {
+      console.warn('GOOGLE_PLACES_API_KEY not found in environment variables');
       // Still return the base list (graceful degradation) so UI can render.
       const fallback = {
         mall: { id: mallId, name: mallInfo?.name, display_name: mallInfo?.display_name },
@@ -174,7 +186,8 @@ export async function onRequest(context) {
             : null,
         };
       } catch (e) {
-        // Gracefully degrade per-restaurant if Google fails for a specific query.
+        // Log error for debugging, but gracefully degrade per-restaurant
+        console.error(`Error fetching Places data for "${r.name}":`, e.message);
         return { ...r, rating: null, reviews: null, google: null };
       }
     });
