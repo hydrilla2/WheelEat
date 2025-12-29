@@ -283,19 +283,21 @@ export async function onRequest(context) {
     const batchSize = parseInt(url.searchParams.get('batch_size') || '0');
     
     // Debug logging for batch parameters
-    if (batch > 0 || batchSize > 0) {
-      console.log(`📦 Batch parameters received: batch=${batch}, batchSize=${batchSize}`);
-    }
-
+    console.log(`📦 Request URL: ${request.url}`);
+    console.log(`📦 Batch parameters: batch=${batch}, batchSize=${batchSize}, mallId=${mallId}`);
+    
     // Cache first (edge cache)
     // Skip cache if nocache parameter is present (for debugging)
-    const urlParams = new URL(request.url).searchParams;
-    const skipCache = urlParams.get('nocache') === '1';
+    const skipCache = url.searchParams.get('nocache') === '1';
     
     const cache = caches.default;
-    const cacheKey = new Request(url.toString(), { method: 'GET' });
+    const cacheKey = new Request(request.url, { method: 'GET' });
     const cached = skipCache ? null : await cache.match(cacheKey);
-    if (cached) return cached;
+    if (cached) {
+      console.log(`📦 Returning cached response (skipCache=${skipCache})`);
+      return cached;
+    }
+    console.log(`📦 No cache hit, processing request...`);
 
     const mallInfo = getMallInfo(mallId);
     const raw = getRestaurantsByMall(mallId);
