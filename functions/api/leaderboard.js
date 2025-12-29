@@ -99,7 +99,10 @@ async function fetchPlaceDetails(placeId, apiKey) {
  * @returns {Promise<object|null>} - Place details or null
  */
 async function fetchPlaceDetailsLegacy(placeId, apiKey) {
-  if (!placeId || !apiKey) return null;
+  if (!placeId || !apiKey) {
+    console.error(`fetchPlaceDetailsLegacy: Missing placeId or apiKey - placeId=${placeId}, apiKey=${apiKey ? 'present' : 'missing'}`);
+    return null;
+  }
   
   try {
     const baseUrl = 'https://maps.googleapis.com/maps/api/place/details/json';
@@ -108,6 +111,7 @@ async function fetchPlaceDetailsLegacy(placeId, apiKey) {
     url.searchParams.set('key', apiKey);
     url.searchParams.set('fields', 'name,rating,user_ratings_total,place_id');
 
+    console.log(`Fetching Place Details for ${placeId}...`);
     const res = await fetch(url.toString());
     if (!res.ok) {
       const text = await res.text().catch(() => '');
@@ -280,7 +284,8 @@ export async function onRequest(context) {
 
     const apiKey = env.GOOGLE_PLACES_API_KEY || env.GOOGLE_API_KEY;
     if (!apiKey) {
-      console.warn('GOOGLE_PLACES_API_KEY not found in environment variables');
+      console.error('❌ GOOGLE_PLACES_API_KEY not found in environment variables');
+      console.error('Available env keys:', Object.keys(env).filter(k => k.includes('GOOGLE') || k.includes('API')));
       // Still return the base list (graceful degradation) so UI can render.
       const fallback = {
         mall: { id: mallId, name: mallInfo?.name, display_name: mallInfo?.display_name },
@@ -322,7 +327,7 @@ export async function onRequest(context) {
         
         if (placeId) {
           // Use Place Details API for exact match
-          console.log(`Looking up place_id for "${r.name}": ${placeId}`);
+          console.log(`Looking up place_id for "${r.name}": ${placeId}, apiKey present: ${!!apiKey}`);
           match = await fetchPlaceDetails(placeId, apiKey);
           if (match) {
             // Even if rating is null/undefined, we found the place, so count as success
@@ -347,7 +352,7 @@ export async function onRequest(context) {
             };
           } else {
             // Place Details API failed, will fallback to text search
-            console.log(`❌ Place Details API failed for "${r.name}" (place_id: ${placeId}), falling back to text search`);
+            console.log(`❌ Place Details API failed for "${r.name}" (place_id: ${placeId}), apiKey present: ${!!apiKey}, falling back to text search`);
             debugInfo = { method: 'place_details', place_id: placeId, found: false, fallback: 'text_search' };
           }
         }
