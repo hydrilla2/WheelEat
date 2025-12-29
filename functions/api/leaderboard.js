@@ -314,7 +314,14 @@ export async function onRequest(context) {
           // Use Place Details API for exact match
           match = await fetchPlaceDetails(placeId, apiKey);
           if (match) {
-            successCount++;
+            // Even if rating is null/undefined, we found the place, so count as success
+            // Some places might not have ratings yet
+            if (match.rating !== null && match.rating !== undefined) {
+              successCount++;
+            } else {
+              // Place found but no rating - still count as found
+              console.log(`Place found for "${r.name}" but no rating available (place_id: ${placeId})`);
+            }
             return {
               ...r,
               rating: typeof match.rating === 'number' ? match.rating : null,
@@ -324,6 +331,9 @@ export async function onRequest(context) {
                 name: match.name || null,
               },
             };
+          } else {
+            // Place Details API failed, will fallback to text search
+            console.log(`Place Details API failed for "${r.name}" (place_id: ${placeId}), falling back to text search`);
           }
         }
         
