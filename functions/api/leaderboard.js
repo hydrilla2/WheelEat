@@ -70,9 +70,8 @@ function pickBestMatch(targetName, places) {
       best = p;
     }
   }
-  // Lowered threshold from 0.4 to 0.25 to catch more matches
-  // This helps with restaurants that have slightly different names in Google Places
-  return bestScore >= 0.25 ? best : null;
+  // Require some minimal similarity so we don’t attach random places.
+  return bestScore >= 0.4 ? best : null;
 }
 
 /**
@@ -82,14 +81,37 @@ function pickBestMatch(targetName, places) {
  * @returns {Promise<object|null>} - Place details or null
  */
 async function fetchPlaceDetails(placeId, apiKey) {
-  if (!placeId || !apiKey) {
-    console.error(`Missing placeId or apiKey: placeId=${placeId}, apiKey=${apiKey ? 'present' : 'missing'}`);
-    return null;
-  }
+  if (!placeId || !apiKey) return null;
   
-  // Use legacy Place Details API directly (more reliable)
-  // The new Places API requires different setup and might not be enabled
-  return await fetchPlaceDetailsLegacy(placeId, apiKey);
+  try {
+    // Try new Places API first
+    const baseUrl = `https://places.googleapis.com/v1/places/${placeId}`;
+    
+    const res = await fetch(baseUrl, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'X-Goog-Api-Key': apiKey,
+        'X-Goog-FieldMask': 'id,displayName,rating,userRatingCount',
+      },
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      return {
+        name: data.displayName?.text || data.displayName,
+        rating: data.rating,
+        user_ratings_total: data.userRatingCount,
+        place_id: data.id || placeId,
+      };
+    }
+    
+    // Fallback to legacy Place Details API
+    return await fetchPlaceDetailsLegacy(placeId, apiKey);
+  } catch (error) {
+    console.log(`New Places API error for place_id ${placeId}, trying legacy: ${error.message}`);
+    return await fetchPlaceDetailsLegacy(placeId, apiKey);
+  }
 }
 
 /**
@@ -99,10 +121,7 @@ async function fetchPlaceDetails(placeId, apiKey) {
  * @returns {Promise<object|null>} - Place details or null
  */
 async function fetchPlaceDetailsLegacy(placeId, apiKey) {
-  if (!placeId || !apiKey) {
-    console.error(`fetchPlaceDetailsLegacy: Missing placeId or apiKey - placeId=${placeId}, apiKey=${apiKey ? 'present' : 'missing'}`);
-    return null;
-  }
+  if (!placeId || !apiKey) return null;
   
   try {
     const baseUrl = 'https://maps.googleapis.com/maps/api/place/details/json';
@@ -115,31 +134,13 @@ async function fetchPlaceDetailsLegacy(placeId, apiKey) {
     const res = await fetch(url.toString());
     if (!res.ok) {
       const text = await res.text().catch(() => '');
-      console.error(`Place Details API HTTP error for ${placeId}: ${res.status} - ${text}`);
       throw new Error(`Place Details API failed: HTTP ${res.status} - ${text}`);
     }
 
     const data = await res.json();
     
-    // Log API response status for debugging
-    if (data.status !== 'OK') {
-      const errorMsg = data.error_message || 'Unknown error';
-      console.error(`Place Details API error for ${placeId}: ${data.status} - ${errorMsg}`);
-      
-      // Return error info for debugging
-      if (data.status === 'REQUEST_DENIED') {
-        console.error(`⚠️ REQUEST_DENIED: API key might be invalid or Place Details API not enabled for ${placeId}`);
-      } else if (data.status === 'INVALID_REQUEST') {
-        console.error(`⚠️ INVALID_REQUEST: place_id might be invalid: ${placeId}`);
-      } else if (data.status === 'NOT_FOUND') {
-        console.error(`⚠️ NOT_FOUND: place_id doesn't exist: ${placeId}`);
-      }
-      
-      return null;
-    }
-    
-    if (data.result) {
-      const result = {
+    if (data.status === 'OK' && data.result) {
+      return {
         name: data.result.name,
         rating: data.result.rating,
         user_ratings_total: data.result.user_ratings_total,
@@ -352,8 +353,18 @@ export async function onRequest(context) {
             };
           } else {
             // Place Details API failed, will fallback to text search
-            console.log(`❌ Place Details API failed for "${r.name}" (place_id: ${placeId}), apiKey present: ${!!apiKey}, falling back to text search`);
-            debugInfo = { method: 'place_details', place_id: placeId, found: false, fallback: 'text_search' };
+            console.error(`❌ Place Details API failed for "${r.name}" (place_id: ${placeId})`);
+            console.error(`   - apiKey present: ${!!apiKey}`);
+            console.error(`   - apiKey length: ${apiKey ? apiKey.length : 0}`);
+            console.error(`   - Falling back to text search`);
+            debugInfo = { 
+              method: 'place_details', 
+              place_id: placeId, 
+              found: false, 
+              fallback: 'text_search',
+              apiKey_present: !!apiKey,
+              apiKey_length: apiKey ? apiKey.length : 0
+            };
           }
         }
         

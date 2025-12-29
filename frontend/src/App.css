@@ -1,9 +1,13 @@
 .App {
   min-height: 100vh;
+  min-height: 100dvh; /* stable viewport height on mobile browsers */
   display: flex;
   justify-content: center;
   align-items: flex-start;
   padding: 20px;
+  width: 100%;
+  overflow-x: hidden;  /* prevent sideways panning from any child overflow */
+  touch-action: pan-y; /* allow vertical scroll, block horizontal pan */
 }
 
 .container {

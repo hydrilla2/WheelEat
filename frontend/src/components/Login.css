@@ -88,7 +88,17 @@
 
 /* Button Icons */
 .btn-icon {
-  font-size: 1.3em;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.3em;
+  height: 1.3em;
+}
+
+.btn-icon svg {
+  width: 100%;
+  height: 100%;
+  display: block;
 }
 
 .btn-text {

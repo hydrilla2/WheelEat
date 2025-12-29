@@ -13,7 +13,7 @@ import Leaderboard from './components/Leaderboard';
 /**
  * Main App Component (WheelEat functionality)
  */
-function WheelEatApp({ user, onLogout }) {
+function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [mallId, setMallId] = useState('sunway_square');
   const [malls, setMalls] = useState([]);
   const [mallsLoading, setMallsLoading] = useState(true);
@@ -242,7 +242,7 @@ function WheelEatApp({ user, onLogout }) {
               ) : null}
               <button
                 type="button"
-                onClick={onLogout}
+                onClick={user ? onLogout : onShowLogin}
                 style={{
                   background: 'transparent',
                   border: '1px solid rgba(102,126,234,0.45)',
@@ -253,10 +253,10 @@ function WheelEatApp({ user, onLogout }) {
                   cursor: 'pointer',
                   whiteSpace: 'nowrap',
                 }}
-                aria-label="Logout (clear test session)"
-                title="Logout (clear test session)"
+                aria-label={user ? 'Logout' : 'Sign in'}
+                title={user ? 'Logout' : 'Sign in'}
               >
-                Logout
+                {user ? 'Logout' : 'Sign in'}
               </button>
             </div>
           </div>
@@ -337,6 +337,7 @@ function WheelEatApp({ user, onLogout }) {
 function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
 
   // Check if user is already logged in (on page load)
   useEffect(() => {
@@ -371,6 +372,10 @@ function App() {
     } else {
       console.log('No saved user or forceLogin/resetAuth is true - showing login');
     }
+
+    // Keep the "wheel-first" experience by default.
+    // Only show the login screen when explicitly requested (or via debug query params).
+    setShowLogin(Boolean(forceLogin || resetAuth));
     setLoading(false);
     console.log('===============================');
   }, []);
@@ -380,6 +385,7 @@ function App() {
     console.log('=== handleLogin called ===');
     console.log('User data received:', userData);
     setUser(userData);
+    setShowLogin(false);
     console.log('User state updated');
     // User data is already saved in localStorage by Login component
   };
@@ -404,13 +410,19 @@ function App() {
     );
   }
 
-  // Show login page if user is not logged in
-  if (!user) {
-    return <Login onLogin={handleLogin} />;
+  // Default: show the wheel first for everyone.
+  // Login is an optional screen opened via the header "Sign in" button.
+  if (showLogin) {
+    return <Login onLogin={handleLogin} onCancel={() => setShowLogin(false)} />;
   }
 
-  // Show main app if user is logged in
-  return <WheelEatApp user={user} onLogout={handleLogout} />;
+  return (
+    <WheelEatApp
+      user={user}
+      onLogout={handleLogout}
+      onShowLogin={() => setShowLogin(true)}
+    />
+  );
 }
 
 export default App;

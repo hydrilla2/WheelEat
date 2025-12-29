@@ -4,6 +4,29 @@ import './Login.css';
 
 import { upsertUser } from '../services/api';
 
+function GoogleIcon() {
+  // Simple "G" mark using paths; uses currentColor so hover states stay consistent.
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M12 10.2v3.9h5.5c-.8 2.4-2.9 4.1-5.5 4.1A6.2 6.2 0 1 1 12 5.8c1.5 0 2.9.6 4 1.6l2.7-2.7A10 10 0 1 0 22 12c0-.7-.1-1.3-.2-1.8H12z"
+      />
+    </svg>
+  );
+}
+
+function GuestIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M12 12a4.5 4.5 0 1 0-4.5-4.5A4.5 4.5 0 0 0 12 12Zm0 2.25c-4 0-7.5 2.02-7.5 4.5V20h15v-1.25c0-2.48-3.5-4.5-7.5-4.5Z"
+      />
+    </svg>
+  );
+}
+
 /**
  * Guest Login Component
  */
@@ -37,7 +60,9 @@ function GuestLogin({ onLogin }) {
       onClick={handleGuestLogin}
       type="button"
     >
-      <span className="btn-icon">≡ƒæñ</span>
+      <span className="btn-icon">
+        <GuestIcon />
+      </span>
       <span className="btn-text">Continue as Guest</span>
     </button>
   );
@@ -131,7 +156,9 @@ function GoogleLoginButton({ onLogin }) {
       disabled={loading}
       type="button"
     >
-      <span className="btn-icon">≡ƒö╡</span>
+      <span className="btn-icon">
+        <GoogleIcon />
+      </span>
       <span className="btn-text">
         {loading ? 'Signing in...' : 'Sign in with Google'}
       </span>
@@ -143,7 +170,7 @@ function GoogleLoginButton({ onLogin }) {
 /**
  * Main Login Component
  */
-function Login({ onLogin }) {
+function Login({ onLogin, onCancel }) {
   const googleClientId = process.env.REACT_APP_GOOGLE_CLIENT_ID;
 
   // Debug logging
@@ -159,7 +186,26 @@ function Login({ onLogin }) {
     return (
       <div className="login-container">
         <div className="login-box">
-          <h1>≡ƒì╜∩╕Å WheelEat</h1>
+          {typeof onCancel === 'function' ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.35)',
+                color: 'white',
+                padding: '8px 12px',
+                borderRadius: '999px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                marginBottom: '12px',
+              }}
+            >
+              ← Back
+            </button>
+          ) : null}
+          <h1>WheelEat</h1>
           <p className="login-subtitle">Please configure OAuth credentials</p>
           <p className="login-error">
             Google Client ID not found. Please add REACT_APP_GOOGLE_CLIENT_ID to .env file.
@@ -176,7 +222,26 @@ function Login({ onLogin }) {
     <GoogleOAuthProvider clientId={googleClientId}>
       <div className="login-container">
         <div className="login-box">
-          <h1>≡ƒì╜∩╕Å WheelEat</h1>
+          {typeof onCancel === 'function' ? (
+            <button
+              type="button"
+              onClick={onCancel}
+              style={{
+                background: 'transparent',
+                border: '1px solid rgba(255,255,255,0.35)',
+                color: 'white',
+                padding: '8px 12px',
+                borderRadius: '999px',
+                fontWeight: 600,
+                cursor: 'pointer',
+                whiteSpace: 'nowrap',
+                marginBottom: '12px',
+              }}
+            >
+              ← Back
+            </button>
+          ) : null}
+          <h1>WheelEat</h1>
           <p className="login-subtitle">Choose how you'd like to continue</p>
           
           <div className="login-buttons">
