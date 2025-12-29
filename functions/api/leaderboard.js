@@ -70,8 +70,9 @@ function pickBestMatch(targetName, places) {
       best = p;
     }
   }
-  // Require some minimal similarity so we don’t attach random places.
-  return bestScore >= 0.4 ? best : null;
+  // Lowered threshold from 0.4 to 0.25 to catch more matches
+  // This helps with restaurants that have slightly different names in Google Places
+  return bestScore >= 0.25 ? best : null;
 }
 
 /**
@@ -327,9 +328,41 @@ export async function onRequest(context) {
         }
         
         // Fallback to text search if no place_id or place_id lookup failed
-        const query = `${r.name} ${mallQueryName}`;
-        const candidates = await fetchPlacesForQuery(query, apiKey);
-        match = pickBestMatch(r.name, candidates);
+        // Try multiple query variations to improve match rate
+        const queries = [
+          `${r.name} ${mallQueryName}`,
+          `${r.name} Sunway Square`,
+          r.name, // Just the restaurant name
+        ];
+        
+        let candidates = [];
+        for (const query of queries) {
+          try {
+            const results = await fetchPlacesForQuery(query, apiKey);
+            candidates = candidates.concat(results);
+            // If we found results, break early
+            if (results.length > 0) break;
+          } catch (e) {
+            // Continue to next query if this one fails
+            continue;
+          }
+        }
+        
+        // Remove duplicates based on place_id
+        const uniqueCandidates = [];
+        const seenPlaceIds = new Set();
+        for (const candidate of candidates) {
+          const pid = candidate.place_id;
+          if (pid && !seenPlaceIds.has(pid)) {
+            seenPlaceIds.add(pid);
+            uniqueCandidates.push(candidate);
+          } else if (!pid) {
+            // Include candidates without place_id (shouldn't happen, but just in case)
+            uniqueCandidates.push(candidate);
+          }
+        }
+        
+        match = pickBestMatch(r.name, uniqueCandidates);
         
         if (match) {
           successCount++;
