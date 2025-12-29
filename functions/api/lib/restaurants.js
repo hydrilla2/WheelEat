@@ -1,6 +1,8 @@
 // Restaurant data for multiple malls
 // Format: [Restaurant Name, Unit Number, Floor, Category, Halal Status]
 
+import { getPlaceId } from './restaurant-places.js';
+
 export const MALL_RESTAURANTS = {
   sunway_square: [
     ["103 Coffee", "L1-07", "LG", "Coffee & Cafes", false],
@@ -155,6 +157,16 @@ export function getLogoPath(restaurantName, mallId = "sunway_square") {
   if (logoFilename) {
     return `images/logo/${logoFilename}`;
   }
+  return null;
+}
+
+export function getGoogleMapsLink(restaurantName, mallId = "sunway_square") {
+  const placeId = getPlaceId(restaurantName, mallId);
+  
+  if (placeId) {
+    return `https://maps.app.goo.gl/${placeId}`;
+  }
+  
   return null;
 }
 
