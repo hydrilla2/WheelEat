@@ -109,4 +109,76 @@ export async function fetchLeaderboard(mallId) {
   return data;
 }
 
+// Fetch leaderboard in batches to ensure all restaurants are processed
+// This works around Cloudflare's subrequest limit (~50 per request)
+export async function fetchLeaderboardBatched(mallId = 'sunway_square', batchSize = 25) {
+  const cacheKey = `leaderboard-batched:${mallId}`;
+  const cached = getCached(cacheKey);
+  if (cached) return cached;
+
+  const batches = [];
+  let batch = 1;
+  let hasMore = true;
+  let totalRestaurants = 0;
+  
+  console.log(`Fetching leaderboard in batches (batch size: ${batchSize})...`);
+  
+  while (hasMore) {
+    try {
+      const url = buildUrl('/api/leaderboard', { 
+        mall_id: mallId,
+        batch: batch,
+        batch_size: batchSize,
+        nocache: '1' // Disable cache for batch requests
+      });
+      
+      console.log(`Fetching batch ${batch}...`);
+      const data = await fetchJson(url);
+      
+      if (data.restaurants && data.restaurants.length > 0) {
+        batches.push(...data.restaurants);
+        totalRestaurants = data._debug?.total_restaurants || data.restaurants.length;
+        
+        // Check if there are more batches
+        if (data.batch && data.batch.has_more) {
+          batch++;
+          console.log(`Batch ${batch - 1} complete, ${data.restaurants.length} restaurants. More batches available.`);
+        } else {
+          hasMore = false;
+          console.log(`Batch ${batch} complete, ${data.restaurants.length} restaurants. All batches fetched.`);
+        }
+      } else {
+        hasMore = false;
+        console.log(`Batch ${batch} returned no restaurants. Stopping.`);
+      }
+    } catch (error) {
+      console.error(`Error fetching batch ${batch}:`, error);
+      hasMore = false;
+    }
+  }
+  
+  // Combine all batches and maintain original order
+  const allRestaurants = batches;
+  
+  const result = {
+    mall: batches.length > 0 ? { 
+      id: mallId, 
+      name: 'Sunway Square', 
+      display_name: 'Sunway Square Mall' 
+    } : null,
+    source: 'google_places_textsearch_per_restaurant_batched',
+    cached_ttl_seconds: 300,
+    restaurants: allRestaurants,
+    _debug: {
+      total_restaurants: totalRestaurants || allRestaurants.length,
+      restaurants_with_ratings: allRestaurants.filter(r => r.rating !== null).length,
+      restaurants_without_ratings: allRestaurants.filter(r => r.rating === null).length,
+      batches_fetched: batch,
+    },
+  };
+  
+  setCached(cacheKey, result, LEADERBOARD_TTL_MS);
+  return result;
+}
+
 

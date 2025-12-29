@@ -277,6 +277,10 @@ export async function onRequest(context) {
   try {
     const url = new URL(request.url);
     const mallId = url.searchParams.get('mall_id') || 'sunway_square';
+    
+    // Support batch processing for client-side batching
+    const batch = parseInt(url.searchParams.get('batch') || '0');
+    const batchSize = parseInt(url.searchParams.get('batch_size') || '0');
 
     // Cache first (edge cache)
     // Skip cache if nocache parameter is present (for debugging)
@@ -324,20 +328,58 @@ export async function onRequest(context) {
     const mallQueryName = mallInfo?.display_name || mallInfo?.name || mallId;
 
     // Per-restaurant search gives much better coverage than "restaurants in mall" for long mall lists.
-    // Concurrency is limited to avoid hitting Cloudflare's "Too many subrequests" limit (typically 50 per request).
-    // With 66 restaurants, we need to keep concurrency low (2) to stay under the limit.
+    // To maximize success rate within Cloudflare's subrequest limit (~50 per request), we:
+    // 1. Prioritize restaurants with place_ids (1 API call each) - process these first
+    // 2. Process restaurants without place_ids last (they need text search, which uses more API calls)
+    // 3. Skip text search fallback when limit is hit to save API calls
+    
+    // If batch processing is requested, only process a subset
+    let restaurantsToProcess = restaurants;
+    if (batch > 0 && batchSize > 0) {
+      const start = (batch - 1) * batchSize;
+      const end = start + batchSize;
+      restaurantsToProcess = restaurants.slice(start, end);
+      console.log(`Batch processing: batch ${batch}, size ${batchSize}, processing restaurants ${start + 1}-${Math.min(end, restaurants.length)} of ${restaurants.length}`);
+    }
+    
+    // Separate restaurants into two groups: with place_ids and without
+    const restaurantsWithPlaceIds = [];
+    const restaurantsWithoutPlaceIds = [];
+    
+    for (const r of restaurantsToProcess) {
+      const placeId = getPlaceId(r.name, mallId);
+      if (placeId) {
+        restaurantsWithPlaceIds.push(r);
+      } else {
+        restaurantsWithoutPlaceIds.push(r);
+      }
+    }
+    
+    console.log(`Processing ${restaurantsWithPlaceIds.length} restaurants with place_ids first, then ${restaurantsWithoutPlaceIds.length} without place_ids`);
+    
     // Track errors for debugging
     const errors = [];
     let successCount = 0;
     let errorCount = 0;
     let subrequestLimitHit = false; // Track if we've hit the subrequest limit
     
-    // Reduced concurrency from 6 to 2 to avoid "Too many subrequests" error
-    // Each restaurant may make 1-2 API calls (Place Details + possibly Text Search fallback)
-    // With 66 restaurants and concurrency of 2, we'll make ~66-132 subrequests, which is close to the limit
-    const enriched = await mapWithConcurrency(restaurants, 2, async (r) => {
+    // Process restaurants with place_ids first (1 API call each, most efficient)
+    // Use concurrency of 1 to maximize restaurants processed before hitting subrequest limit
+    // With concurrency of 1, we can process ~50 restaurants before hitting the ~50 subrequest limit
+    const enrichedWithPlaceIds = await mapWithConcurrency(restaurantsWithPlaceIds, 1, async (r) => {
       try {
-        // First, check if we have a place_id mapping for this restaurant
+        // Skip if we've already hit the subrequest limit
+        if (subrequestLimitHit) {
+          console.log(`Skipping "${r.name}" (subrequest limit reached)`);
+          return {
+            ...r,
+            rating: null,
+            reviews: null,
+            google: null,
+            _debug: { method: 'place_details', place_id: getPlaceId(r.name, mallId), found: false, skipped: 'subrequest_limit' },
+          };
+        }
+        
         const placeId = getPlaceId(r.name, mallId);
         let match = null;
         let debugInfo = null;
@@ -401,88 +443,30 @@ export async function onRequest(context) {
               };
             }
             
-            console.error(`   - Falling back to text search`);
-            debugInfo = { 
-              method: 'place_details', 
-              place_id: placeId, 
-              found: false, 
-              fallback: 'text_search',
-              apiKey_present: !!apiKey,
-              apiKey_length: apiKey ? apiKey.length : 0,
-              error: isSubrequestLimit ? 'Too many subrequests (Cloudflare limit)' : 'Unknown'
+            // Don't fallback to text search for restaurants with place_ids - they should only use Place Details API
+            // If Place Details fails, return null (we'll handle it in the next phase if needed)
+            return {
+              ...r,
+              rating: null,
+              reviews: null,
+              google: null,
+              _debug: debugInfo || { 
+                method: 'place_details', 
+                place_id: placeId, 
+                found: false, 
+                error: isSubrequestLimit ? 'Too many subrequests (Cloudflare limit)' : 'Unknown'
+              },
             };
           }
         }
         
-        // Fallback to text search if no place_id or place_id lookup failed
-        // Skip if we've hit the subrequest limit
-        if (subrequestLimitHit && !placeId) {
-          console.log(`Skipping text search for "${r.name}" (subrequest limit reached)`);
-          return {
-            ...r,
-            rating: null,
-            reviews: null,
-            google: null,
-            _debug: { method: 'text_search', found: false, skipped: 'subrequest_limit' },
-          };
-        }
-        // Try multiple query variations to improve match rate
-        const queries = [
-          `${r.name} ${mallQueryName}`,
-          `${r.name} Sunway Square`,
-          r.name, // Just the restaurant name
-        ];
-        
-        let candidates = [];
-        for (const query of queries) {
-          try {
-            const results = await fetchPlacesForQuery(query, apiKey);
-            candidates = candidates.concat(results);
-            // If we found results, break early
-            if (results.length > 0) break;
-          } catch (e) {
-            // Continue to next query if this one fails
-            continue;
-          }
-        }
-        
-        // Remove duplicates based on place_id
-        const uniqueCandidates = [];
-        const seenPlaceIds = new Set();
-        for (const candidate of candidates) {
-          const pid = candidate.place_id;
-          if (pid && !seenPlaceIds.has(pid)) {
-            seenPlaceIds.add(pid);
-            uniqueCandidates.push(candidate);
-          } else if (!pid) {
-            // Include candidates without place_id (shouldn't happen, but just in case)
-            uniqueCandidates.push(candidate);
-          }
-        }
-        
-        match = pickBestMatch(r.name, uniqueCandidates);
-        
-        if (match) {
-          successCount++;
-        } else {
-          errorCount++;
-          // Log first few failures for debugging
-          if (errorCount <= 3) {
-            console.log(`No match found for "${r.name}" - found ${candidates.length} candidates`);
-          }
-        }
-        
+        // This shouldn't happen for restaurants with place_ids, but handle it just in case
         return {
           ...r,
-          rating: typeof match?.rating === 'number' ? match.rating : null,
-          reviews: typeof match?.user_ratings_total === 'number' ? match.user_ratings_total : null,
-          google: match
-            ? {
-                place_id: match.place_id || null,
-                name: match.name || null,
-              }
-            : null,
-          _debug: debugInfo || (placeId ? { method: 'place_details', place_id: placeId, found: false } : { method: 'text_search', found: match !== null }),
+          rating: null,
+          reviews: null,
+          google: null,
+          _debug: { method: 'place_details', place_id: placeId, found: false, error: 'No place_id found' },
         };
       } catch (e) {
         errorCount++;
@@ -499,8 +483,147 @@ export async function onRequest(context) {
             console.error(`Error fetching Places data for "${r.name}":`, errorMsg);
           }
         }
-        return { ...r, rating: null, reviews: null, google: null };
+        return { 
+          ...r, 
+          rating: null, 
+          reviews: null, 
+          google: null,
+          _debug: { method: 'place_details', found: false, error: errorMsg },
+        };
       }
+    });
+    
+    // Process restaurants without place_ids (they need text search, which uses more API calls)
+    // Only process if we haven't hit the subrequest limit yet
+    let enrichedWithoutPlaceIds = [];
+    if (!subrequestLimitHit && restaurantsWithoutPlaceIds.length > 0) {
+      console.log(`Processing ${restaurantsWithoutPlaceIds.length} restaurants without place_ids (text search)`);
+      enrichedWithoutPlaceIds = await mapWithConcurrency(restaurantsWithoutPlaceIds, 1, async (r) => {
+        try {
+          // Skip if we've hit the subrequest limit
+          if (subrequestLimitHit) {
+            console.log(`Skipping text search for "${r.name}" (subrequest limit reached)`);
+            return {
+              ...r,
+              rating: null,
+              reviews: null,
+              google: null,
+              _debug: { method: 'text_search', found: false, skipped: 'subrequest_limit' },
+            };
+          }
+          
+          // Try multiple query variations to improve match rate
+          const queries = [
+            `${r.name} ${mallQueryName}`,
+            `${r.name} Sunway Square`,
+            r.name, // Just the restaurant name
+          ];
+          
+          let candidates = [];
+          for (const query of queries) {
+            try {
+              const results = await fetchPlacesForQuery(query, apiKey);
+              candidates = candidates.concat(results);
+              // If we found results, break early
+              if (results.length > 0) break;
+            } catch (e) {
+              // Check if it's a "Too many subrequests" error
+              if (e.message && e.message.includes('Too many subrequests')) {
+                subrequestLimitHit = true;
+                console.error(`⚠️ Cloudflare subrequest limit reached during text search for "${r.name}"`);
+              }
+              // Continue to next query if this one fails
+              continue;
+            }
+          }
+          
+          // Remove duplicates based on place_id
+          const uniqueCandidates = [];
+          const seenPlaceIds = new Set();
+          for (const candidate of candidates) {
+            const pid = candidate.place_id;
+            if (pid && !seenPlaceIds.has(pid)) {
+              seenPlaceIds.add(pid);
+              uniqueCandidates.push(candidate);
+            } else if (!pid) {
+              // Include candidates without place_id (shouldn't happen, but just in case)
+              uniqueCandidates.push(candidate);
+            }
+          }
+          
+          const match = pickBestMatch(r.name, uniqueCandidates);
+          
+          if (match) {
+            successCount++;
+          } else {
+            errorCount++;
+            // Log first few failures for debugging
+            if (errorCount <= 3) {
+              console.log(`No match found for "${r.name}" - found ${candidates.length} candidates`);
+            }
+          }
+          
+          return {
+            ...r,
+            rating: typeof match?.rating === 'number' ? match.rating : null,
+            reviews: typeof match?.user_ratings_total === 'number' ? match.user_ratings_total : null,
+            google: match
+              ? {
+                  place_id: match.place_id || null,
+                  name: match.name || null,
+                }
+              : null,
+            _debug: { method: 'text_search', found: match !== null },
+          };
+        } catch (e) {
+          errorCount++;
+          const errorMsg = e.message || String(e);
+          errors.push({ restaurant: r.name, error: errorMsg });
+          
+          // Check if it's a "Too many subrequests" error
+          if (errorMsg.includes('Too many subrequests')) {
+            console.error(`⚠️ Cloudflare subrequest limit reached for "${r.name}". This is a Cloudflare Pages limit (typically 50 subrequests per request).`);
+            subrequestLimitHit = true; // Mark that we've hit the limit
+          } else {
+            // Log first few errors for debugging
+            if (errors.length <= 3) {
+              console.error(`Error fetching Places data for "${r.name}":`, errorMsg);
+            }
+          }
+          
+          return {
+            ...r,
+            rating: null,
+            reviews: null,
+            google: null,
+            _debug: { method: 'text_search', found: false, error: errorMsg },
+          };
+        }
+      });
+    } else if (subrequestLimitHit) {
+      // If we hit the limit, return restaurants without place_ids as null
+      console.log(`Skipping ${restaurantsWithoutPlaceIds.length} restaurants without place_ids (subrequest limit reached)`);
+      enrichedWithoutPlaceIds = restaurantsWithoutPlaceIds.map(r => ({
+        ...r,
+        rating: null,
+        reviews: null,
+        google: null,
+        _debug: { method: 'text_search', found: false, skipped: 'subrequest_limit' },
+      }));
+    }
+    
+    // Combine results: maintain original order by merging back in the correct sequence
+    const enrichedMap = new Map();
+    enrichedWithPlaceIds.forEach(r => enrichedMap.set(r.name, r));
+    enrichedWithoutPlaceIds.forEach(r => enrichedMap.set(r.name, r));
+    
+    // Reconstruct in original order
+    const enriched = restaurants.map(r => enrichedMap.get(r.name) || {
+      ...r,
+      rating: null,
+      reviews: null,
+      google: null,
+      _debug: { method: 'unknown', found: false },
     });
     
     // Log summary
@@ -521,6 +644,15 @@ export async function onRequest(context) {
       source: 'google_places_textsearch_per_restaurant',
       cached_ttl_seconds: CACHE_TTL_SECONDS,
       restaurants: restaurantsClean,
+      // Add batch info if batch processing
+      ...(batch > 0 && batchSize > 0 ? {
+        batch: {
+          current: batch,
+          size: batchSize,
+          total_restaurants: restaurants.length,
+          has_more: (batch * batchSize) < restaurants.length,
+        }
+      } : {}),
       _debug: {
         total_restaurants: total,
         restaurants_with_ratings: withRatings,

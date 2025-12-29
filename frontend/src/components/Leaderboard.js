@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import './Leaderboard.css';
-import { fetchLeaderboard } from '../services/api';
+import { fetchLeaderboardBatched } from '../services/api';
 import { sortLeaderboardRows } from '../utils/leaderboard';
 
 function clampRating(rating) {
@@ -27,23 +27,38 @@ export default function Leaderboard({ mallId, mallName }) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
+  const [loadingProgress, setLoadingProgress] = useState('');
 
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
     setError(null);
+    setLoadingProgress('Fetching leaderboard in batches...');
 
-    fetchLeaderboard(mallId)
+    // Use batched fetching to ensure all restaurants are processed
+    // This works around Cloudflare's subrequest limit (~50 per request)
+    fetchLeaderboardBatched(mallId, 25)
       .then((data) => {
         if (cancelled) return;
         setRows(Array.isArray(data?.restaurants) ? data.restaurants : []);
         setLoading(false);
+        setLoadingProgress('');
+        
+        // Log success stats
+        if (data._debug) {
+          const total = data._debug.total_restaurants || 0;
+          const withRatings = data._debug.restaurants_with_ratings || 0;
+          const batches = data._debug.batches_fetched || 1;
+          console.log(`✅ Leaderboard loaded: ${withRatings}/${total} restaurants with ratings (${batches} batch${batches > 1 ? 'es' : ''})`);
+        }
       })
       .catch((e) => {
         if (cancelled) return;
         setError(e?.message || 'Failed to load leaderboard');
         setRows([]);
         setLoading(false);
+        setLoadingProgress('');
+        console.error('Leaderboard fetch error:', e);
       });
 
     return () => {
@@ -80,7 +95,11 @@ export default function Leaderboard({ mallId, mallName }) {
         </div>
       </div>
 
-      {loading ? <div className="leaderboard-loading">Loading leaderboard…</div> : null}
+      {loading ? (
+        <div className="leaderboard-loading">
+          {loadingProgress || 'Loading leaderboard…'}
+        </div>
+      ) : null}
       {error ? <div className="leaderboard-error">{error}</div> : null}
 
       {!loading && !error ? (
