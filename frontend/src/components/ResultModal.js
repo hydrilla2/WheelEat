@@ -70,6 +70,19 @@ function ResultModal({ result, onClose, onSpinAgain }) {
               <span className="detail-value">{result.category}</span>
             </div>
           </div>
+          
+          {/* Google Maps Link Button */}
+          {result.google_maps_link && (
+            <a 
+              href={result.google_maps_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="google-maps-button"
+            >
+              📍 View on Google Maps
+            </a>
+          )}
+          
           <div className="result-timestamp">
             Spun at {formatTime(result.timestamp)}
           </div>
