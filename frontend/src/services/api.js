@@ -135,7 +135,14 @@ export async function fetchLeaderboardBatched(mallId = 'sunway_square', batchSiz
       });
       
       console.log(`Fetching batch ${batch}...`);
+      console.log(`📦 Request URL: ${url}`);
       const data = await fetchJson(url);
+      console.log(`📦 Batch ${batch} response:`, {
+        restaurants_count: data.restaurants?.length || 0,
+        has_batch_metadata: !!data.batch,
+        batch_has_more: data.batch?.has_more,
+        total_restaurants: data.batch?.total_restaurants || data._debug?.total_restaurants
+      });
       
       if (data.restaurants && data.restaurants.length > 0) {
         batches.push(...data.restaurants);
