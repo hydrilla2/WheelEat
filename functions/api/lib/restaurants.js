@@ -1,8 +1,6 @@
 // Restaurant data for multiple malls
 // Format: [Restaurant Name, Unit Number, Floor, Category, Halal Status]
 
-import { getPlaceId } from './restaurant-places.js';
-
 export const MALL_RESTAURANTS = {
   sunway_square: [
     ["103 Coffee", "L1-07", "LG", "Coffee & Cafes", false],
@@ -67,6 +65,7 @@ export const MALL_RESTAURANTS = {
     ["Village Grocer", "LG1-05 to LG1-09", "LG1", "Supermarket", false],
     ["Yellow Bento", "L2-01", "L2", "Japanese Cuisine", false],
     ["Yonny", "L1-32", "L1", "Chinese & Taiwanese", false],
+    ["Yakiniku Smile MY", "LG-01", "LG", "Japanese Cuisine", false],
     ["Yama by Hojichaya", "L2-10A", "L2", "Japanese Cuisine", true],
     ["Yogurt Planet", "LG1-19", "LG1", "Snacks & Desserts", true],
     ["Zus Coffee", "L1-02", "L1", "Coffee & Cafes", true],
@@ -145,8 +144,9 @@ const LOGO_MAPPING = {
   "The Chicken Rice Shop": "the-chicken-rice-shop.png",
   "Village Grocer": "village-grocer.png",
   "Yellow Bento": "yellow-bento.jpeg",
-  "Yonny": "yonny.png",
-  "Yama by Hojichaya": "yama-by-hojichaya.png",
+    "Yonny": "yonny.png",
+    "Yakiniku Smile MY": "yakiniku-smile-my.png",
+    "Yama by Hojichaya": "yama-by-hojichaya.png",
   "Yogurt Planet": "yogurt-planet.png",
   "Zus Coffee": "zus-coffee.png",
   "Zok Noodle House": "zok-noodle-house.png",
@@ -157,16 +157,6 @@ export function getLogoPath(restaurantName, mallId = "sunway_square") {
   if (logoFilename) {
     return `images/logo/${logoFilename}`;
   }
-  return null;
-}
-
-export function getGoogleMapsLink(restaurantName, mallId = "sunway_square") {
-  const placeId = getPlaceId(restaurantName, mallId);
-  
-  if (placeId) {
-    return `https://maps.app.goo.gl/${placeId}`;
-  }
-  
   return null;
 }
 

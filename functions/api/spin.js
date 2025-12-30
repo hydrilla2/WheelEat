@@ -1,7 +1,7 @@
 // POST /api/spin
 // Spin the wheel and return a random restaurant from selected categories
 
-import { getRestaurantsByCategories, getGoogleMapsLink } from './lib/restaurants.js';
+import { getRestaurantsByCategories } from './lib/restaurants.js';
 import { getD1Database, generateUUID, getCurrentTimestamp } from './lib/d1.js';
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
 
@@ -81,8 +81,7 @@ export async function onRequest(context) {
         category: selectedRestaurant.category,
         timestamp: new Date(timestamp * 1000).toISOString(),
         spin_id: spinId,
-        logo: selectedRestaurant.logo,
-        google_maps_link: getGoogleMapsLink(selectedRestaurant.name, mallId)
+        logo: selectedRestaurant.logo
       });
     } catch (dbError) {
       console.error('Database error:', dbError);
@@ -94,8 +93,7 @@ export async function onRequest(context) {
         category: selectedRestaurant.category,
         timestamp: new Date().toISOString(),
         spin_id: null,
-        logo: selectedRestaurant.logo,
-        google_maps_link: getGoogleMapsLink(selectedRestaurant.name, mallId)
+        logo: selectedRestaurant.logo
       });
     }
   } catch (error) {
