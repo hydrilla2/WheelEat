@@ -68,7 +68,7 @@ export const RESTAURANT_PLACE_IDS = {
     "Yonny": "ChIJvZ4-FgBNzDERI9PrDGjXUJk",
     "Yama by Hojichaya": "ChIJf6iO6AJNzDERKMBCHF558PU",
     "Yogurt Planet": "ChIJ-8jlX-BNzDERb36a1NwUwvY",
-    "Zus Coffee": null,
+    "Zus Coffee": "ChIJ_1aKt4dNzDER7CIPbAMs2U8",
     "Zok Noodle House": "ChIJPUl4EQBNzDERJmv9rI92FcM",
   },
 };
