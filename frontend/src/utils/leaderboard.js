@@ -1,4 +1,4 @@
-export function sortLeaderboardRows(rows, mode) {
+﻿export function sortLeaderboardRows(rows, mode) {
   const copy = Array.isArray(rows) ? [...rows] : [];
 
   const asNumber = (n) => (typeof n === 'number' && !Number.isNaN(n) ? n : -1);
