@@ -10,6 +10,17 @@ import AdSense from './components/AdSense';
 import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel } from './services/api';
 import Leaderboard from './components/Leaderboard';
 
+function MenuIcon() {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+      <path
+        fill="currentColor"
+        d="M4 7.5h16a1 1 0 1 0 0-2H4a1 1 0 0 0 0 2Zm16 3.5H4a1 1 0 0 0 0 2h16a1 1 0 1 0 0-2Zm0 5.5H4a1 1 0 0 0 0 2h16a1 1 0 1 0 0-2Z"
+      />
+    </svg>
+  );
+}
+
 /**
  * Main App Component (WheelEat functionality)
  */
@@ -26,8 +37,36 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard'
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuButtonRef = useRef(null);
+  const menuRef = useRef(null);
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
+
+  // Close header menu on outside click / escape
+  useEffect(() => {
+    if (!menuOpen) return;
+
+    const onMouseDown = (e) => {
+      const btn = menuButtonRef.current;
+      const menu = menuRef.current;
+      const target = e.target;
+      if (btn && btn.contains(target)) return;
+      if (menu && menu.contains(target)) return;
+      setMenuOpen(false);
+    };
+
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape') setMenuOpen(false);
+    };
+
+    document.addEventListener('mousedown', onMouseDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onMouseDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [menuOpen]);
 
   // Result "ring" sound (frontend/public/sounds/ring.mp3 -> /sounds/ring.mp3)
   useEffect(() => {
@@ -190,74 +229,76 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
             format="horizontal" 
             label="Header Ad"
           />
-          <div
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              gap: '12px',
-            }}
-          >
-            <div style={{ flex: 1 }} />
-            <h1 style={{ margin: 0, flex: 'none' }}>🍽️ WheelEat</h1>
-            <div style={{ flex: 1, display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '10px' }}>
-              <div style={{ display: 'flex', gap: '8px' }}>
-                <button
-                  type="button"
-                  onClick={() => setActiveView('wheel')}
-                  style={{
-                    background: activeView === 'wheel' ? '#667eea' : 'transparent',
-                    border: '1px solid rgba(102,126,234,0.45)',
-                    color: activeView === 'wheel' ? 'white' : '#667eea',
-                    padding: '8px 12px',
-                    borderRadius: '999px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Wheel
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setActiveView('leaderboard')}
-                  style={{
-                    background: activeView === 'leaderboard' ? '#667eea' : 'transparent',
-                    border: '1px solid rgba(102,126,234,0.45)',
-                    color: activeView === 'leaderboard' ? 'white' : '#667eea',
-                    padding: '8px 12px',
-                    borderRadius: '999px',
-                    fontWeight: 700,
-                    cursor: 'pointer',
-                    whiteSpace: 'nowrap',
-                  }}
-                >
-                  Leaderboard
-                </button>
-              </div>
-              {user?.name ? (
-                <span style={{ fontSize: '0.9rem', color: '#667eea', fontWeight: 600, whiteSpace: 'nowrap' }}>
-                  {user.name}
-                </span>
-              ) : null}
+          <div className="header-bar">
+            <div />
+            <h1 style={{ margin: 0 }}>🍽️ WheelEat</h1>
+            <div className="header-actions">
               <button
+                ref={menuButtonRef}
                 type="button"
-                onClick={user ? onLogout : onShowLogin}
-                style={{
-                  background: 'transparent',
-                  border: '1px solid rgba(102,126,234,0.45)',
-                  color: '#667eea',
-                  padding: '8px 12px',
-                  borderRadius: '999px',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  whiteSpace: 'nowrap',
-                }}
-                aria-label={user ? 'Logout' : 'Sign in'}
-                title={user ? 'Logout' : 'Sign in'}
+                className="header-menu-button"
+                aria-label="Open menu"
+                aria-haspopup="menu"
+                aria-expanded={menuOpen ? 'true' : 'false'}
+                onClick={() => setMenuOpen((v) => !v)}
               >
-                {user ? 'Logout' : 'Sign in'}
+                <span className="header-menu-icon" aria-hidden="true">
+                  <MenuIcon />
+                </span>
               </button>
+
+              {menuOpen ? (
+                <div ref={menuRef} className="header-menu-dropdown" role="menu">
+                  <div className="header-menu-user" aria-label="Current user">
+                    {user?.name ? user.name : 'Guest'}
+                  </div>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`header-menu-item ${activeView === 'wheel' ? 'active' : ''}`}
+                    onClick={() => {
+                      setActiveView('wheel');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <span className="header-menu-check" aria-hidden="true">
+                      {activeView === 'wheel' ? '✓' : ''}
+                    </span>
+                    Wheel
+                  </button>
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={`header-menu-item ${activeView === 'leaderboard' ? 'active' : ''}`}
+                    onClick={() => {
+                      setActiveView('leaderboard');
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <span className="header-menu-check" aria-hidden="true">
+                      {activeView === 'leaderboard' ? '✓' : ''}
+                    </span>
+                    Leaderboard
+                  </button>
+
+                  <div className="header-menu-divider" role="separator" />
+
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="header-menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      (user ? onLogout : onShowLogin)();
+                    }}
+                  >
+                    <span className="header-menu-check" aria-hidden="true" />
+                    {user ? 'Logout' : 'Sign in'}
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
           <p className="subtitle">Spin the wheel to decide where to eat!</p>
