@@ -1,4 +1,4 @@
-﻿export function sortLeaderboardRows(rows, mode) {
+export function sortLeaderboardRows(rows, mode) {
   const copy = Array.isArray(rows) ? [...rows] : [];
 
   // Helper function to get numeric value, with null/undefined treated as -Infinity
