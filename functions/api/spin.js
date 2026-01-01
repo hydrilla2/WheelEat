@@ -90,6 +90,9 @@ export async function onRequest(context) {
       // Get Google Maps URL for the restaurant
       const googleMapsUrl = getGoogleMapsUrl(selectedRestaurant.name, mallId);
 
+      return jsonResponse({
+        restaurant_name: selectedRestaurant.name,
+        restaurant_unit: selectedRestaurant.unit,
         restaurant_floor: selectedRestaurant.floor,
         category: selectedRestaurant.category,
         timestamp: new Date().toISOString(),
