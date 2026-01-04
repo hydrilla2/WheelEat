@@ -21,14 +21,15 @@ function getGoogleMapsUrls(restaurantName, mallId) {
     ? `https://www.google.com/maps/place/?q=place_id:${placeId}`
     : null;
 
-  // Mobile deep link - uses intent:// scheme which has built-in fallback support
-  // This will try to open Google Maps app, and if it's not installed, fallback to web URL
+  // Mobile deep link - uses Google Maps search URL with coordinates and restaurant name
+  // This works better on mobile devices and opens the Maps app if installed
   let mobileUrl = null;
-  if (coordinates && webUrl) {
-    // intent:// URL format for Android with built-in fallback
-    // Format: intent://maps.google.com/?center=LAT,LNG&zoom=15#Intent;scheme=https;action=android.intent.action.VIEW;end
-    const mapsWebUrl = `https://www.google.com/maps/?center=${coordinates.lat},${coordinates.lng}&zoom=15`;
-    mobileUrl = `intent://${mapsWebUrl.replace('https://', '')}#Intent;scheme=https;action=android.intent.action.VIEW;end`;
+  if (coordinates && restaurantName) {
+    // Use Google Maps search URL with location and restaurant name
+    // Format: https://maps.google.com/maps/search/RestaurantName/@LAT,LNG,15z
+    // The intent:// wrapper will open in Google Maps app on Android
+    const mapsSearchUrl = `https://maps.google.com/maps/search/${encodeURIComponent(restaurantName)}/@${coordinates.lat},${coordinates.lng},15z`;
+    mobileUrl = `intent://${mapsSearchUrl.replace('https://', '')}#Intent;scheme=https;action=android.intent.action.VIEW;package=com.google.android.apps.maps;end`;
   } else if (webUrl) {
     // Fallback to web URL
     mobileUrl = webUrl;
