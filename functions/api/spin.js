@@ -127,8 +127,8 @@ export async function onRequest(context) {
     } catch (dbError) {
       console.error('Database error:', dbError);
       // Return result even if database insert fails
-      // Get Google Maps URL for the restaurant
-      const googleMapsUrl = getGoogleMapsUrl(selectedRestaurant.name, mallId);
+      // Get Google Maps URLs for the restaurant (both web and mobile versions)
+      const googleMapsUrls = getGoogleMapsUrls(selectedRestaurant.name, mallId);
 
       return jsonResponse({
         restaurant_name: selectedRestaurant.name,
@@ -138,7 +138,8 @@ export async function onRequest(context) {
         timestamp: new Date().toISOString(),
         spin_id: null,
         logo: selectedRestaurant.logo,
-        google_maps_url: googleMapsUrl || null
+        google_maps_url: googleMapsUrls.web || null,
+        google_maps_mobile_url: googleMapsUrls.mobile || null
       });
     }
   } catch (error) {
