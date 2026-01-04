@@ -8,7 +8,7 @@
 
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
 import { getMallInfo, getRestaurantsByMall, getLogoPath } from './lib/restaurants.js';
-import { getPlaceId, isExplicitlyUnavailable } from './lib/restaurant-places.js';
+import { getPlaceId } from './lib/restaurant-places.js';
 
 const CACHE_TTL_SECONDS = 300; // 5 minutes
 
@@ -368,28 +368,20 @@ export async function onRequest(context) {
       console.log(`📦 Batch processing: batch ${batch}, size ${batchSize}, processing restaurants from slice (${restaurantsToProcess.length} restaurants)`);
     }
     
-    // Separate restaurants into three groups:
-    // 1. With place_ids (use Place Details API)
-    // 2. Without place_ids but not explicitly unavailable (try text search)
-    // 3. Explicitly unavailable (null in mapping - skip search entirely)
+    // Separate restaurants into two groups: with place_ids and without
     const restaurantsWithPlaceIds = [];
     const restaurantsWithoutPlaceIds = [];
-    const restaurantsExplicitlyUnavailable = [];
     
     for (const r of restaurantsToProcess) {
       const placeId = getPlaceId(r.name, mallId);
       if (placeId) {
         restaurantsWithPlaceIds.push(r);
-      } else if (isExplicitlyUnavailable(r.name, mallId)) {
-        // Explicitly marked as null - don't try text search
-        restaurantsExplicitlyUnavailable.push(r);
       } else {
-        // Not in mapping yet - try text search
         restaurantsWithoutPlaceIds.push(r);
       }
     }
     
-    console.log(`Processing ${restaurantsWithPlaceIds.length} restaurants with place_ids first, then ${restaurantsWithoutPlaceIds.length} without place_ids (will try text search), and ${restaurantsExplicitlyUnavailable.length} explicitly unavailable (skipping search)`);
+    console.log(`Processing ${restaurantsWithPlaceIds.length} restaurants with place_ids first, then ${restaurantsWithoutPlaceIds.length} without place_ids`);
     
     // Track errors for debugging
     const errors = [];
@@ -646,20 +638,10 @@ export async function onRequest(context) {
       }));
     }
     
-    // Add explicitly unavailable restaurants (marked as null in mapping - don't search)
-    const enrichedExplicitlyUnavailable = restaurantsExplicitlyUnavailable.map(r => ({
-      ...r,
-      rating: null,
-      reviews: null,
-      google: null,
-      _debug: { method: 'explicitly_unavailable', found: false, skipped: 'marked_as_null_in_mapping' },
-    }));
-    
     // Combine results: maintain original order by merging back in the correct sequence
     const enrichedMap = new Map();
     enrichedWithPlaceIds.forEach(r => enrichedMap.set(r.name, r));
     enrichedWithoutPlaceIds.forEach(r => enrichedMap.set(r.name, r));
-    enrichedExplicitlyUnavailable.forEach(r => enrichedMap.set(r.name, r));
     
     // Reconstruct in original order - use restaurantsToProcess (sliced if batching) not the full restaurants array
     const enriched = restaurantsToProcess.map(r => enrichedMap.get(r.name) || {

@@ -191,4 +191,28 @@ export async function fetchLeaderboardBatched(mallId = 'sunway_square', batchSiz
   return result;
 }
 
+// Page view tracking
+export async function trackPageView(path = window.location.pathname, userId = null) {
+  try {
+    const url = buildUrl('/api/page-views');
+    await fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        path: path,
+        user_id: userId,
+      }),
+    });
+  } catch (error) {
+    // Silently fail - don't interrupt user experience
+    console.debug('Page view tracking failed:', error);
+  }
+}
+
+// Get page view statistics
+export async function getPageViewStats() {
+  const url = buildUrl('/api/page-views');
+  return await fetchJson(url);
+}
+
 

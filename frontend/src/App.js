@@ -7,7 +7,7 @@ import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 import Login from './components/Login';
 import AdSense from './components/AdSense';
-import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel } from './services/api';
+import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
 import Leaderboard from './components/Leaderboard';
 
 function MenuIcon() {
@@ -419,6 +419,19 @@ function App() {
     setShowLogin(Boolean(forceLogin || resetAuth));
     setLoading(false);
     console.log('===============================');
+
+    // Track page view
+    const savedUser = localStorage.getItem('wheeleat_user');
+    let userId = null;
+    if (savedUser) {
+      try {
+        const userData = JSON.parse(savedUser);
+        userId = userData.id || null;
+      } catch (e) {
+        // Ignore parse errors
+      }
+    }
+    trackPageView(window.location.pathname, userId);
   }, []);
 
   // Handle login success
