@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import './VoucherOfferModal.css';
 
 function formatRm(value) {
@@ -14,10 +14,8 @@ export default function VoucherOfferModal({ result, valueRm = 10, onAccept, onDe
   const logoPath = result.logo ? `/${result.logo}` : null;
   const amountLabel = formatRm(valueRm);
 
-  const voucherPreview = useMemo(() => {
-    const code = String(result.spin_id || '').slice(-6).toUpperCase();
-    return code ? `WE-${code}` : 'WE-XXXXXX';
-  }, [result.spin_id]);
+  const code = String(result.spin_id || '').slice(-6).toUpperCase();
+  const voucherPreview = code ? `WE-${code}` : 'WE-XXXXXX';
 
   return (
     <div className="voucher-offer-overlay" onClick={onDecline}>
