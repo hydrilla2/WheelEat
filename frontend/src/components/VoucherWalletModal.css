@@ -1,0 +1,242 @@
+.voucher-wallet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1200;
+  backdrop-filter: blur(6px);
+  padding: 14px;
+}
+
+.voucher-wallet {
+  width: min(720px, 100%);
+  max-height: min(82vh, 720px);
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  position: relative;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.28);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.voucher-wallet::before {
+  content: "";
+  position: absolute;
+  inset: -150px -150px auto auto;
+  width: 340px;
+  height: 340px;
+  background: radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.28), rgba(118, 75, 162, 0));
+  pointer-events: none;
+}
+
+.voucher-wallet-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: #444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+
+.voucher-wallet-header {
+  text-align: center;
+  padding-top: 6px;
+  padding-bottom: 12px;
+}
+
+.voucher-wallet-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #222;
+}
+
+.voucher-wallet-subtitle {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: #666;
+  font-weight: 600;
+}
+
+.voucher-wallet-empty {
+  margin-top: 10px;
+  background: #f7f8fb;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 18px;
+  text-align: center;
+}
+
+.voucher-wallet-emptyTitle {
+  font-weight: 900;
+  color: #667eea;
+  font-size: 1.1rem;
+}
+
+.voucher-wallet-emptyText {
+  margin-top: 8px;
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.4;
+}
+
+.voucher-wallet-list {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 2px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.voucher-wallet-item {
+  display: grid;
+  grid-template-columns: 72px 1fr auto;
+  gap: 12px;
+  align-items: center;
+  background: #f7f8fb;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.voucher-wallet-itemLeft {
+  width: 72px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: white;
+  overflow: hidden;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.voucher-wallet-logo {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  padding: 6px;
+}
+
+.voucher-wallet-logoPlaceholder {
+  font-weight: 900;
+  color: #667eea;
+}
+
+.voucher-wallet-itemMain {
+  min-width: 0;
+}
+
+.voucher-wallet-amount {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.12) 0%, rgba(118, 75, 162, 0.12) 100%);
+  color: #3f4fd1;
+  font-weight: 900;
+  width: fit-content;
+}
+
+.voucher-wallet-restaurant {
+  margin-top: 8px;
+  font-weight: 900;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.voucher-wallet-meta {
+  margin-top: 6px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
+.voucher-wallet-code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+  font-weight: 800;
+  color: #667eea;
+  background: rgba(102, 126, 234, 0.10);
+  padding: 4px 8px;
+  border-radius: 10px;
+}
+
+.voucher-wallet-date {
+  color: #777;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.voucher-wallet-itemRight {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.voucher-wallet-remove {
+  background: transparent;
+  border: 1px solid rgba(0, 0, 0, 0.18);
+  color: #444;
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.voucher-wallet-remove:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.voucher-wallet-footer {
+  padding-top: 10px;
+  display: flex;
+  justify-content: center;
+}
+
+.voucher-wallet-clear {
+  background: transparent;
+  border: 1px solid rgba(102, 126, 234, 0.35);
+  color: #667eea;
+  padding: 10px 14px;
+  border-radius: 999px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.voucher-wallet-clear:hover {
+  background: rgba(102, 126, 234, 0.08);
+}
+
+@media (max-width: 480px) {
+  .voucher-wallet {
+    padding: 18px;
+    border-radius: 18px;
+    max-height: 86vh;
+  }
+  .voucher-wallet-item {
+    grid-template-columns: 62px 1fr;
+    grid-template-rows: auto auto;
+  }
+  .voucher-wallet-itemRight {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+}
+
+

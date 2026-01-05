@@ -1,0 +1,204 @@
+.voucher-offer-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1100; /* above ResultModal (1000) */
+  backdrop-filter: blur(6px);
+  animation: voucherFade 0.22s ease-out;
+  padding: 14px;
+}
+
+@keyframes voucherFade {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.voucher-offer {
+  width: min(460px, 100%);
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  position: relative;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.28);
+  animation: voucherPop 0.28s ease-out;
+  overflow: hidden;
+}
+
+@keyframes voucherPop {
+  from { transform: translateY(18px) scale(0.98); opacity: 0; }
+  to { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.voucher-offer::before {
+  content: "";
+  position: absolute;
+  inset: -120px -120px auto auto;
+  width: 260px;
+  height: 260px;
+  background: radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.35), rgba(118, 75, 162, 0));
+  pointer-events: none;
+}
+
+.voucher-offer-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: #444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.voucher-offer-close:hover {
+  background: rgba(0, 0, 0, 0.10);
+}
+
+.voucher-offer-badge {
+  position: absolute;
+  top: 14px;
+  left: 14px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  color: white;
+  font-weight: 800;
+  letter-spacing: 0.3px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 10px 24px rgba(102, 126, 234, 0.35);
+}
+
+.voucher-offer-header {
+  text-align: center;
+  margin-top: 16px;
+}
+
+.voucher-offer-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #222;
+}
+
+.voucher-offer-subtitle {
+  margin-top: 6px;
+  font-size: 0.95rem;
+  color: #666;
+}
+
+.voucher-offer-card {
+  margin-top: 16px;
+  background: #f7f8fb;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 16px;
+  text-align: center;
+}
+
+.voucher-offer-logoWrap {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+
+.voucher-offer-logo {
+  max-width: 210px;
+  max-height: 120px;
+  width: auto;
+  height: auto;
+  object-fit: contain;
+  border-radius: 12px;
+  background: white;
+  padding: 10px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.12);
+}
+
+.voucher-offer-restaurantName {
+  margin-top: 2px;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #667eea;
+  word-break: break-word;
+}
+
+.voucher-offer-code {
+  margin-top: 8px;
+  display: inline-flex;
+  padding: 8px 12px;
+  border-radius: 12px;
+  background: rgba(102, 126, 234, 0.12);
+  color: #3f4fd1;
+  font-weight: 800;
+  letter-spacing: 0.8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.voucher-offer-terms {
+  margin-top: 10px;
+  font-size: 0.86rem;
+  color: #777;
+  line-height: 1.35;
+}
+
+.voucher-offer-actions {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.voucher-offer-primary {
+  width: 100%;
+  border: none;
+  border-radius: 999px;
+  padding: 14px 16px;
+  font-weight: 800;
+  font-size: 1rem;
+  color: white;
+  cursor: pointer;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 12px 30px rgba(102, 126, 234, 0.34);
+}
+
+.voucher-offer-primary:hover {
+  transform: translateY(-1px);
+}
+
+.voucher-offer-secondary {
+  width: 100%;
+  border: 1px solid rgba(102, 126, 234, 0.35);
+  border-radius: 999px;
+  padding: 12px 16px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: #667eea;
+  cursor: pointer;
+  background: transparent;
+}
+
+.voucher-offer-secondary:hover {
+  background: rgba(102, 126, 234, 0.08);
+}
+
+@media (max-width: 420px) {
+  .voucher-offer {
+    padding: 18px;
+    border-radius: 18px;
+  }
+  .voucher-offer-logo {
+    max-width: 180px;
+    max-height: 105px;
+  }
+  .voucher-offer-restaurantName {
+    font-size: 1.2rem;
+  }
+}
+
+
