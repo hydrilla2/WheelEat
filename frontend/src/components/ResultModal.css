@@ -28,9 +28,12 @@
   padding: 40px;
   max-width: 500px;
   width: 90%;
+  max-height: 90vh;
   position: relative;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
   animation: slideUp 0.4s ease-out;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 @keyframes slideUp {
@@ -61,6 +64,22 @@
   justify-content: center;
   transition: all 0.3s ease;
   line-height: 1;
+  z-index: 10;
+  min-width: 35px;
+  min-height: 35px;
+}
+
+/* Responsive close button - Tablet */
+@media (max-width: 1024px) and (min-width: 769px) {
+  .result-modal-close {
+    width: 32px;
+    height: 32px;
+    min-width: 32px;
+    min-height: 32px;
+    font-size: 22px;
+    top: 12px;
+    right: 12px;
+  }
 }
 
 .result-modal-close:hover {
@@ -189,6 +208,17 @@
     padding: 30px 24px;
     width: 95%;
     max-width: 450px;
+    padding-top: 50px; /* Extra padding for close button */
+  }
+
+  .result-modal-close {
+    width: 30px;
+    height: 30px;
+    min-width: 30px;
+    min-height: 30px;
+    font-size: 20px;
+    top: 10px;
+    right: 10px;
   }
 
   .result-title {
@@ -232,14 +262,17 @@
     max-width: 100%;
     border-radius: 15px;
     margin: 10px;
+    padding-top: 45px; /* Extra padding for close button */
   }
 
   .result-modal-close {
-    width: 32px;
-    height: 32px;
-    top: 12px;
-    right: 12px;
-    font-size: 20px;
+    width: 28px;
+    height: 28px;
+    min-width: 28px;
+    min-height: 28px;
+    top: 8px;
+    right: 8px;
+    font-size: 18px;
   }
 
   .result-title {
@@ -301,6 +334,17 @@
 @media (max-width: 360px) {
   .result-modal {
     padding: 20px 15px;
+    padding-top: 40px; /* Extra padding for close button */
+  }
+
+  .result-modal-close {
+    width: 26px;
+    height: 26px;
+    min-width: 26px;
+    min-height: 26px;
+    top: 6px;
+    right: 6px;
+    font-size: 16px;
   }
 
   .result-title {
@@ -318,6 +362,24 @@
   .result-logo {
     max-width: 150px;
     max-height: 90px;
+  }
+}
+
+/* Large Desktop - Enhanced close button */
+@media (min-width: 1200px) {
+  .result-modal {
+    max-width: 550px;
+    padding: 45px;
+  }
+
+  .result-modal-close {
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    min-height: 38px;
+    font-size: 26px;
+    top: 18px;
+    right: 18px;
   }
 }
 
