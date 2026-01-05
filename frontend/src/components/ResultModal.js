@@ -1,6 +1,7 @@
 import React from 'react';
 import './ResultModal.css';
 import RestaurantAdBanner from './RestaurantAdBanner';
+import { getRestaurantLocation } from '../data/restaurantLocations';
 
 function ResultModal({ result, onClose, onSpinAgain }) {
   if (!result) return null;
@@ -82,7 +83,15 @@ function ResultModal({ result, onClose, onSpinAgain }) {
             </div>
             <div className="result-detail-item result-location-item">
               <span className="detail-label">📍 Location:</span>
-              <button className="location-box">
+              <button 
+                className="location-box"
+                onClick={() => {
+                  const locationUrl = getRestaurantLocation(result.restaurant_name);
+                  if (locationUrl) {
+                    window.open(locationUrl, '_blank');
+                  }
+                }}
+              >
                 {result.restaurant_location || 'View Location'}
               </button>
             </div>

@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react';
 import './Leaderboard.css';
 import { fetchLeaderboardBatched } from '../services/api';
 import { sortLeaderboardRows } from '../utils/leaderboard';
+import { getRestaurantLocation } from '../data/restaurantLocations';
 
 function clampRating(rating) {
   if (typeof rating !== 'number' || Number.isNaN(rating)) return null;
@@ -111,7 +112,19 @@ export default function Leaderboard({ mallId, mallName }) {
               </div>
 
               <div className="leaderboard-main">
-                <p className="restaurant-name">{r.name}</p>
+                <p 
+                  className="restaurant-name"
+                  onClick={() => {
+                    const locationUrl = getRestaurantLocation(r.name);
+                    if (locationUrl) {
+                      window.open(locationUrl, '_blank');
+                    }
+                  }}
+                  style={{ cursor: getRestaurantLocation(r.name) ? 'pointer' : 'default' }}
+                  title={getRestaurantLocation(r.name) ? 'Click to view location' : ''}
+                >
+                  {r.name}
+                </p>
                 <div className="restaurant-meta">
                   <span className="meta-pill">{r.category || 'Unknown'}</span>
                 </div>

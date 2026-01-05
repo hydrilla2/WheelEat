@@ -1,5 +1,6 @@
 import React from 'react';
 import './ResultDisplay.css';
+import { getRestaurantLocation } from '../data/restaurantLocations';
 
 function ResultDisplay({ result }) {
   if (!result) return null;
@@ -22,7 +23,15 @@ function ResultDisplay({ result }) {
           </div>
           <div className="result-detail-item result-location-item">
             <span className="detail-label">📍 Location:</span>
-            <button className="location-box">
+            <button 
+              className="location-box"
+              onClick={() => {
+                const locationUrl = getRestaurantLocation(result.restaurant_name);
+                if (locationUrl) {
+                  window.open(locationUrl, '_blank');
+                }
+              }}
+            >
               {result.restaurant_location || 'View Location'}
             </button>
           </div>
