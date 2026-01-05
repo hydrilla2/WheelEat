@@ -1,0 +1,168 @@
+.claim-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.55);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1300;
+  backdrop-filter: blur(6px);
+  padding: 14px;
+}
+
+.claim-modal {
+  width: min(720px, 100%);
+  max-height: min(86vh, 760px);
+  background: white;
+  border-radius: 22px;
+  padding: 22px;
+  position: relative;
+  box-shadow: 0 26px 70px rgba(0, 0, 0, 0.28);
+  overflow: auto;
+}
+
+.claim-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.06);
+  border: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  font-size: 22px;
+  color: #444;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.claim-header {
+  text-align: center;
+  padding-top: 6px;
+}
+
+.claim-title {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #222;
+}
+
+.claim-subtitle {
+  margin: 10px auto 0;
+  max-width: 52ch;
+  color: #666;
+  font-size: 0.95rem;
+  line-height: 1.45;
+}
+
+.claim-voucherCard {
+  margin-top: 16px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #f7f8fb;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 16px;
+  padding: 12px;
+}
+
+.claim-logo {
+  width: 72px;
+  height: 56px;
+  object-fit: contain;
+  padding: 6px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 10px 24px rgba(0, 0, 0, 0.08);
+}
+
+.claim-voucherInfo {
+  min-width: 0;
+}
+
+.claim-voucherName {
+  font-weight: 900;
+  color: #222;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.claim-voucherCode {
+  margin-top: 6px;
+  display: inline-flex;
+  padding: 6px 10px;
+  border-radius: 12px;
+  background: rgba(102, 126, 234, 0.12);
+  color: #3f4fd1;
+  font-weight: 900;
+  letter-spacing: 0.8px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+}
+
+.claim-steps {
+  margin: 16px 0 0;
+  padding-left: 18px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.claim-steps li {
+  margin: 10px 0;
+}
+
+.claim-steps ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+  color: #444;
+}
+
+.claim-note {
+  margin-top: 14px;
+  background: rgba(102, 126, 234, 0.08);
+  border: 1px solid rgba(102, 126, 234, 0.18);
+  border-radius: 14px;
+  padding: 12px;
+  color: #444;
+  line-height: 1.45;
+}
+
+.claim-cta {
+  margin-top: 14px;
+  display: inline-flex;
+  width: 100%;
+  justify-content: center;
+  align-items: center;
+  text-decoration: none;
+  border-radius: 999px;
+  padding: 14px 16px;
+  font-weight: 900;
+  color: white;
+  background: linear-gradient(135deg, #25d366 0%, #128c7e 100%);
+  box-shadow: 0 14px 30px rgba(18, 140, 126, 0.28);
+}
+
+.claim-cta:hover {
+  transform: translateY(-1px);
+}
+
+@media (max-width: 480px) {
+  .claim-modal {
+    padding: 18px;
+    border-radius: 18px;
+  }
+  .claim-voucherCard {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .claim-logo {
+    width: 100%;
+    max-width: 210px;
+    height: 90px;
+  }
+}
+
+

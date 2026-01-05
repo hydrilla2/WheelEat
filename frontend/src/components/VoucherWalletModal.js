@@ -1,5 +1,6 @@
-import React from 'react';
+import React, { useState } from 'react';
 import './VoucherWalletModal.css';
+import ClaimCashbackModal from './ClaimCashbackModal';
 
 function formatRm(value) {
   const n = typeof value === 'number' ? value : Number(value);
@@ -17,6 +18,7 @@ function formatDate(iso) {
 
 export default function VoucherWalletModal({ vouchers, onClose, onRemove, onClear }) {
   const list = Array.isArray(vouchers) ? vouchers : [];
+  const [claimingVoucher, setClaimingVoucher] = useState(null);
 
   return (
     <div className="voucher-wallet-overlay" onClick={onClose}>
@@ -71,6 +73,15 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onClea
                     <div className="voucher-wallet-itemRight">
                       <button
                         type="button"
+                        className="voucher-wallet-open"
+                        onClick={() => setClaimingVoucher(v)}
+                        aria-label={`Open voucher actions for ${v.restaurantName}`}
+                        title="Open"
+                      >
+                        Open
+                      </button>
+                      <button
+                        type="button"
                         className="voucher-wallet-remove"
                         onClick={() => onRemove?.(v.id)}
                         aria-label={`Remove voucher for ${v.restaurantName}`}
@@ -92,6 +103,10 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onClea
           </>
         )}
       </div>
+
+      {claimingVoucher ? (
+        <ClaimCashbackModal voucher={claimingVoucher} onClose={() => setClaimingVoucher(null)} />
+      ) : null}
     </div>
   );
 }
