@@ -24,7 +24,7 @@ function RestaurantAdBanner({ variant = 'top' }) {
       description: 'Traditional coconut rice with fried chicken, sambal, and sides',
       image: '/images/ads/nasi-lemak-goreng.jpg', // Dish 1
       placeholderBg: 'linear-gradient(135deg, #feca57 0%, #ff9ff3 100%)',
-      price: 'From RM 8.90',
+      price: 'From RM 18.90',
       cta: 'Visit Restaurant'
     },
     {
@@ -33,7 +33,7 @@ function RestaurantAdBanner({ variant = 'top' }) {
       description: 'Slow-cooked beef in rich, aromatic spices',
       image: '/images/ads/rendang-daging.jpg', // Dish 2
       placeholderBg: 'linear-gradient(135deg, #8b4513 0%, #a0522d 100%)',
-      price: 'From RM 12.90',
+      price: 'From RM 16.90',
       cta: 'Visit Restaurant'
     },
     {
@@ -42,7 +42,7 @@ function RestaurantAdBanner({ variant = 'top' }) {
       description: 'Spicy coconut curry noodles with prawns and vegetables',
       image: '/images/ads/asam-laksa.jpg', // Dish 3
       placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
-      price: 'From RM 10.90',
+      price: 'From RM 19.50',
       cta: 'Visit Restaurant'
     },
     {
@@ -51,7 +51,7 @@ function RestaurantAdBanner({ variant = 'top' }) {
       description: 'Rich coconut curry noodles with fresh herbs and toppings',
       image: '/images/ads/prawnNoodle.jpg', // Dish 4
       placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
-      price: 'From RM 11.90',
+      price: 'From RM 21.50',
       cta: 'Visit Restaurant'
     },
     {
@@ -60,7 +60,7 @@ function RestaurantAdBanner({ variant = 'top' }) {
       description: 'Rice cakes in creamy coconut curry soup',
       image: '/images/ads/lontong-nasi-impit.jpg', // Dish 5
       placeholderBg: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
-      price: 'From RM 9.90',
+      price: 'From RM 20.50',
       cta: 'Visit Restaurant'
     }
   ];
