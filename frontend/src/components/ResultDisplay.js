@@ -17,12 +17,14 @@ function ResultDisplay({ result }) {
         <div className="result-restaurant-name">{result.restaurant_name}</div>
         <div className="result-details">
           <div className="result-detail-item">
-            <span className="detail-label">📍 Unit:</span>
+            <span className="detail-label">� Floor/Unit:</span>
             <span className="detail-value">{result.restaurant_unit}</span>
           </div>
-          <div className="result-detail-item">
-            <span className="detail-label">🏢 Floor:</span>
-            <span className="detail-value">{result.restaurant_floor}</span>
+          <div className="result-detail-item result-location-item">
+            <span className="detail-label">📍 Location:</span>
+            <button className="location-box">
+              {result.restaurant_location || 'View Location'}
+            </button>
           </div>
           <div className="result-detail-item">
             <span className="detail-label">🍽️ Category:</span>

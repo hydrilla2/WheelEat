@@ -180,6 +180,35 @@
   margin-bottom: 25px;
 }
 
+.result-location-item {
+  align-items: flex-start;
+}
+
+.location-box {
+  background: white;
+  border: 2px solid #667eea;
+  color: #667eea;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.location-box:hover {
+  background: #667eea;
+  color: white;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.location-box:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 8px rgba(102, 126, 234, 0.2);
+}
+}
+
 .result-modal-button {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

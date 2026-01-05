@@ -85,6 +85,33 @@
   margin-top: 10px;
 }
 
+.result-location-item {
+  align-items: flex-start;
+}
+
+.location-box {
+  background: rgba(255, 255, 255, 0.3);
+  border: 2px solid rgba(255, 255, 255, 0.5);
+  color: white;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.location-box:hover {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.8);
+  transform: translateY(-2px);
+}
+
+.location-box:active {
+  transform: translateY(0);
+  background: rgba(255, 255, 255, 0.2);
+}
+
 @media (max-width: 480px) {
   .result-content {
     padding: 30px 20px;
