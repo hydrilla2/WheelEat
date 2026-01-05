@@ -32,15 +32,7 @@
   to { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-.voucher-offer::before {
-  content: "";
-  position: absolute;
-  inset: -120px -120px auto auto;
-  width: 260px;
-  height: 260px;
-  background: radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.35), rgba(118, 75, 162, 0));
-  pointer-events: none;
-}
+/* Removed decorative gradient (it can render as a weird square on some devices/browsers). */
 
 .voucher-offer-close {
   position: absolute;

@@ -328,6 +328,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 <span className="header-menu-icon" aria-hidden="true">
                   <MenuIcon />
                 </span>
+                {vouchers.length > 0 ? <span className="header-menu-dot" aria-label="You have vouchers" /> : null}
               </button>
 
               {menuOpen ? (
@@ -348,7 +349,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                     <span className="header-menu-check" aria-hidden="true">
                       {activeView === 'wheel' ? '✓' : ''}
                     </span>
-                    Wheel
+                    <span className="header-menu-label">Wheel</span>
                   </button>
 
                   <button
@@ -363,7 +364,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                     <span className="header-menu-check" aria-hidden="true">
                       {activeView === 'leaderboard' ? '✓' : ''}
                     </span>
-                    Leaderboard
+                    <span className="header-menu-label">Leaderboard</span>
                   </button>
 
                   <button
@@ -376,7 +377,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                     }}
                   >
                     <span className="header-menu-check" aria-hidden="true" />
-                    <span style={{ flex: 1 }}>Vouchers</span>
+                    <span className="header-menu-label">Vouchers</span>
                     {vouchers.length > 0 ? <span className="header-menu-badge">{vouchers.length}</span> : null}
                   </button>
 
@@ -392,7 +393,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                     }}
                   >
                     <span className="header-menu-check" aria-hidden="true" />
-                    {user ? 'Logout' : 'Sign in'}
+                    <span className="header-menu-label">{user ? 'Logout' : 'Sign in'}</span>
                   </button>
                 </div>
               ) : null}

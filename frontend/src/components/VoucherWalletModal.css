@@ -23,15 +23,7 @@
   flex-direction: column;
 }
 
-.voucher-wallet::before {
-  content: "";
-  position: absolute;
-  inset: -150px -150px auto auto;
-  width: 340px;
-  height: 340px;
-  background: radial-gradient(circle at 30% 30%, rgba(102, 126, 234, 0.28), rgba(118, 75, 162, 0));
-  pointer-events: none;
-}
+/* Removed decorative gradient (it can render as a weird square on some devices/browsers). */
 
 .voucher-wallet-close {
   position: absolute;
