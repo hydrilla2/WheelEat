@@ -5,81 +5,8 @@ function RestaurantAdBanner({ variant = 'top', restaurantCategory = null }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageError, setImageError] = useState({});
 
-  // Separate ad configurations by restaurant
+  // Ad configurations by restaurant - easy to add more
   const adConfigs = {
-    nls: {
-      restaurant: 'NLS Nasi Lemak Shop',
-      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M',
-      slides: [
-        {
-          type: 'profile',
-          restaurantName: 'NLS Nasi Lemak Shop',
-          location: 'Sunway Square Mall',
-          rating: '4.4',
-          reviews: '36 reviews',
-          description: 'Authentic Malaysian cuisine with free-flow sambal!',
-          image: '/images/ads/nls-restaurant.jpg',
-          placeholderBg: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
-          cta: 'Visit Restaurant',
-          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-        },
-        {
-          type: 'dish',
-          restaurantName: 'NLS Nasi Lemak Shop',
-          dishName: 'Nasi Lemak Goreng',
-          description: 'Traditional coconut rice with fried chicken, sambal, and sides',
-          image: '/images/ads/nasi-lemak-goreng.jpg',
-          placeholderBg: 'linear-gradient(135deg, #feca57 0%, #ff9ff3 100%)',
-          price: 'From RM 18.90',
-          cta: 'Visit Restaurant',
-          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-        },
-        {
-          type: 'dish',
-          restaurantName: 'NLS Nasi Lemak Shop',
-          dishName: 'Rendang Daging',
-          description: 'Slow-cooked beef in rich, aromatic spices',
-          image: '/images/ads/rendang-daging.jpg',
-          placeholderBg: 'linear-gradient(135deg, #8b4513 0%, #a0522d 100%)',
-          price: 'From RM 16.90',
-          cta: 'Visit Restaurant',
-          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-        },
-        {
-          type: 'dish',
-          restaurantName: 'NLS Nasi Lemak Shop',
-          dishName: 'Asam Laksa',
-          description: 'Spicy coconut curry noodles with prawns and vegetables',
-          image: '/images/ads/asam-laksa.jpg',
-          placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
-          price: 'From RM 19.50',
-          cta: 'Visit Restaurant',
-          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-        },
-        {
-          type: 'dish',
-          restaurantName: 'NLS Nasi Lemak Shop',
-          dishName: 'Prawn Noodles',
-          description: 'Rich coconut curry noodles with fresh herbs and toppings',
-          image: '/images/ads/prawnNoodle.jpg',
-          placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
-          price: 'From RM 21.50',
-          cta: 'Visit Restaurant',
-          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-        },
-        {
-          type: 'dish',
-          restaurantName: 'NLS Nasi Lemak Shop',
-          dishName: 'Lontong Nasi Impit',
-          description: 'Rice cakes in creamy coconut curry soup',
-          image: '/images/ads/lontong-nasi-impit.jpg',
-          placeholderBg: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
-          price: 'From RM 20.50',
-          cta: 'Visit Restaurant',
-          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-        }
-      ]
-    },
     farCoffee: {
       restaurant: 'Far Coffee',
       placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA',
@@ -153,6 +80,7 @@ function RestaurantAdBanner({ variant = 'top', restaurantCategory = null }) {
         }
       ]
     }
+    // Add more restaurants here in the future
   };
 
   // Determine which ads to show based on category
@@ -160,23 +88,26 @@ function RestaurantAdBanner({ variant = 'top', restaurantCategory = null }) {
     // Normalize category name
     const normalizedCategory = restaurantCategory?.toLowerCase() || '';
     
-    // Coffee categories
-    const coffeeKeywords = ['coffee', 'cafe', 'tea', 'beverage'];
-    const isCoffee = coffeeKeywords.some(keyword => normalizedCategory.includes(keyword));
-    
-    // Malaysian categories
-    const malaysianKeywords = ['malaysian', 'local', 'malay', 'nasi lemak', 'roti', 'satay'];
-    const isMalaysian = malaysianKeywords.some(keyword => normalizedCategory.includes(keyword));
+    // Define keyword mappings for each restaurant
+    const restaurantKeywords = {
+      farCoffee: ['coffee', 'cafe', 'tea', 'beverage']
+    };
 
-    // Return the appropriate ads, or random if ambiguous
-    if (isCoffee && !isMalaysian) {
-      return adConfigs.farCoffee;
-    } else if (isMalaysian && !isCoffee) {
-      return adConfigs.nls;
-    } else {
-      // Both, neither, or uncertain - pick random
-      return Math.random() > 0.5 ? adConfigs.farCoffee : adConfigs.nls;
+    // Check which restaurant matches the category
+    for (const [key, keywords] of Object.entries(restaurantKeywords)) {
+      if (keywords.some(keyword => normalizedCategory.includes(keyword))) {
+        return adConfigs[key];
+      }
     }
+
+    // If no match or multiple matches, pick random from available ads
+    const availableAds = Object.values(adConfigs);
+    if (availableAds.length > 0) {
+      return availableAds[Math.floor(Math.random() * availableAds.length)];
+    }
+
+    // Fallback to Far Coffee
+    return adConfigs.farCoffee;
   };
 
   const activeAds = getAdsToShow();
