@@ -51,7 +51,7 @@ function ResultModal({ result, onClose, onSpinAgain }) {
         <button className="result-modal-close" onClick={onClose}>×</button>
         <div className="result-modal-content">
           {/* Restaurant Ad Banner inside modal */}
-          <RestaurantAdBanner variant="modal" />
+          <RestaurantAdBanner variant="modal" restaurantCategory={result.category} />
           
           <div className="result-icon">🎉</div>
           

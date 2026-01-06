@@ -1,148 +1,186 @@
 import React, { useState, useEffect } from 'react';
 import './RestaurantAdBanner.css';
 
-function RestaurantAdBanner({ variant = 'top' }) {
+function RestaurantAdBanner({ variant = 'top', restaurantCategory = null }) {
   const [currentSlide, setCurrentSlide] = useState(0);
   const [imageError, setImageError] = useState({});
 
-  // Restaurant profile and dishes data
-  const slides = [
-    {
-      type: 'profile',
-      restaurantName: 'NLS Nasi Lemak Shop',
-      location: 'Sunway Square Mall',
-      rating: '4.4',
-      reviews: '36 reviews',
-      description: 'Authentic Malaysian cuisine with free-flow sambal!',
-      image: '/images/ads/nls-restaurant.jpg', // Restaurant interior - First picture
-      placeholderBg: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M' // NLS Nasi Lemak Shop
+  // Separate ad configurations by restaurant
+  const adConfigs = {
+    nls: {
+      restaurant: 'NLS Nasi Lemak Shop',
+      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M',
+      slides: [
+        {
+          type: 'profile',
+          restaurantName: 'NLS Nasi Lemak Shop',
+          location: 'Sunway Square Mall',
+          rating: '4.4',
+          reviews: '36 reviews',
+          description: 'Authentic Malaysian cuisine with free-flow sambal!',
+          image: '/images/ads/nls-restaurant.jpg',
+          placeholderBg: 'linear-gradient(135deg, #ff6b6b 0%, #ee5a6f 100%)',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'NLS Nasi Lemak Shop',
+          dishName: 'Nasi Lemak Goreng',
+          description: 'Traditional coconut rice with fried chicken, sambal, and sides',
+          image: '/images/ads/nasi-lemak-goreng.jpg',
+          placeholderBg: 'linear-gradient(135deg, #feca57 0%, #ff9ff3 100%)',
+          price: 'From RM 18.90',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'NLS Nasi Lemak Shop',
+          dishName: 'Rendang Daging',
+          description: 'Slow-cooked beef in rich, aromatic spices',
+          image: '/images/ads/rendang-daging.jpg',
+          placeholderBg: 'linear-gradient(135deg, #8b4513 0%, #a0522d 100%)',
+          price: 'From RM 16.90',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'NLS Nasi Lemak Shop',
+          dishName: 'Asam Laksa',
+          description: 'Spicy coconut curry noodles with prawns and vegetables',
+          image: '/images/ads/asam-laksa.jpg',
+          placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
+          price: 'From RM 19.50',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'NLS Nasi Lemak Shop',
+          dishName: 'Prawn Noodles',
+          description: 'Rich coconut curry noodles with fresh herbs and toppings',
+          image: '/images/ads/prawnNoodle.jpg',
+          placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
+          price: 'From RM 21.50',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'NLS Nasi Lemak Shop',
+          dishName: 'Lontong Nasi Impit',
+          description: 'Rice cakes in creamy coconut curry soup',
+          image: '/images/ads/lontong-nasi-impit.jpg',
+          placeholderBg: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
+          price: 'From RM 20.50',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
+        }
+      ]
     },
-    {
-      type: 'dish',
-      restaurantName: 'NLS Nasi Lemak Shop',
-      dishName: 'Nasi Lemak Goreng',
-      description: 'Traditional coconut rice with fried chicken, sambal, and sides',
-      image: '/images/ads/nasi-lemak-goreng.jpg', // Dish 1
-      placeholderBg: 'linear-gradient(135deg, #feca57 0%, #ff9ff3 100%)',
-      price: 'From RM 18.90',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-    },
-    {
-      type: 'dish',
-      restaurantName: 'NLS Nasi Lemak Shop',
-      dishName: 'Rendang Daging',
-      description: 'Slow-cooked beef in rich, aromatic spices',
-      image: '/images/ads/rendang-daging.jpg', // Dish 2
-      placeholderBg: 'linear-gradient(135deg, #8b4513 0%, #a0522d 100%)',
-      price: 'From RM 16.90',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-    },
-    {
-      type: 'dish',
-      restaurantName: 'NLS Nasi Lemak Shop',
-      dishName: 'Asam Laksa',
-      description: 'Spicy coconut curry noodles with prawns and vegetables',
-      image: '/images/ads/asam-laksa.jpg', // Dish 3
-      placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
-      price: 'From RM 19.50',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-    },
-    {
-      type: 'dish',
-      restaurantName: 'NLS Nasi Lemak Shop',
-      dishName: 'Prawn Noodles',
-      description: 'Rich coconut curry noodles with fresh herbs and toppings',
-      image: '/images/ads/prawnNoodle.jpg', // Dish 4
-      placeholderBg: 'linear-gradient(135deg, #ff7675 0%, #fd79a8 100%)',
-      price: 'From RM 21.50',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-    },
-    {
-      type: 'dish',
-      restaurantName: 'NLS Nasi Lemak Shop',
-      dishName: 'Lontong Nasi Impit',
-      description: 'Rice cakes in creamy coconut curry soup',
-      image: '/images/ads/lontong-nasi-impit.jpg', // Dish 5
-      placeholderBg: 'linear-gradient(135deg, #00b894 0%, #00cec9 100%)',
-      price: 'From RM 20.50',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJsTe-CQBNzDERQ8ON2zveN4M'
-    },
-    // Far Coffee slides
-    {
-      type: 'profile',
-      restaurantName: 'Far Coffee',
-      location: 'Sunway Square Mall',
-      rating: '4.3',
-      reviews: '28 reviews',
-      description: 'Specialty coffee and cozy ambiance!',
-      image: '/images/logo/far-coffee.png', // Far Coffee logo
-      placeholderBg: 'linear-gradient(135deg, #8b6f47 0%, #a0826d 100%)',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA' // Far Coffee
-    },
-    {
-      type: 'dish',
-      restaurantName: 'Far Coffee',
-      dishName: 'Espresso',
-      description: 'Espresso',
-      image: '/images/logo/far-coffee.png',
-      placeholderBg: 'linear-gradient(135deg, #6f4e37 0%, #8b6f47 100%)',
-      price: 'RM 7.90',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
-    },
-    {
-      type: 'dish',
-      restaurantName: 'Far Coffee',
-      dishName: 'Cafe Latte',
-      description: 'Cafe Latte',
-      image: '/images/logo/far-coffee.png',
-      placeholderBg: 'linear-gradient(135deg, #d2b48c 0%, #c9a961 100%)',
-      price: 'RM 10.90',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
-    },
-    {
-      type: 'dish',
-      restaurantName: 'Far Coffee',
-      dishName: 'Americano',
-      description: 'Americano',
-      image: '/images/logo/far-coffee.png',
-      placeholderBg: 'linear-gradient(135deg, #6f4e37 0%, #8b6f47 100%)',
-      price: 'RM 9.90',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
-    },
-    {
-      type: 'dish',
-      restaurantName: 'Far Coffee',
-      dishName: 'Cappuccino',
-      description: 'Cappuccino',
-      image: '/images/logo/far-coffee.png',
-      placeholderBg: 'linear-gradient(135deg, #d2b48c 0%, #c9a961 100%)',
-      price: 'RM 10.90',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
-    },
-    {
-      type: 'dish',
-      restaurantName: 'Far Coffee',
-      dishName: 'Some Cookie',
-      description: 'Some Cookie',
-      image: '/images/logo/far-coffee.png',
-      placeholderBg: 'linear-gradient(135deg, #d4a574 0%, #c9a961 100%)',
-      price: 'RM 8.90',
-      cta: 'Visit Restaurant',
-      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+    farCoffee: {
+      restaurant: 'Far Coffee',
+      placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA',
+      slides: [
+        {
+          type: 'profile',
+          restaurantName: 'Far Coffee',
+          location: 'Sunway Square Mall',
+          rating: '4.3',
+          reviews: '28 reviews',
+          description: 'Specialty coffee and cozy ambiance!',
+          image: '/images/logo/far-coffee.png',
+          placeholderBg: 'linear-gradient(135deg, #8b6f47 0%, #a0826d 100%)',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'Far Coffee',
+          dishName: 'Espresso',
+          description: 'Espresso',
+          image: '/images/logo/far-coffee.png',
+          placeholderBg: 'linear-gradient(135deg, #6f4e37 0%, #8b6f47 100%)',
+          price: 'RM 7.90',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'Far Coffee',
+          dishName: 'Cafe Latte',
+          description: 'Cafe Latte',
+          image: '/images/logo/far-coffee.png',
+          placeholderBg: 'linear-gradient(135deg, #d2b48c 0%, #c9a961 100%)',
+          price: 'RM 10.90',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'Far Coffee',
+          dishName: 'Americano',
+          description: 'Americano',
+          image: '/images/logo/far-coffee.png',
+          placeholderBg: 'linear-gradient(135deg, #6f4e37 0%, #8b6f47 100%)',
+          price: 'RM 9.90',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'Far Coffee',
+          dishName: 'Cappuccino',
+          description: 'Cappuccino',
+          image: '/images/logo/far-coffee.png',
+          placeholderBg: 'linear-gradient(135deg, #d2b48c 0%, #c9a961 100%)',
+          price: 'RM 10.90',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+        },
+        {
+          type: 'dish',
+          restaurantName: 'Far Coffee',
+          dishName: 'Some Cookie',
+          description: 'Some Cookie',
+          image: '/images/logo/far-coffee.png',
+          placeholderBg: 'linear-gradient(135deg, #d4a574 0%, #c9a961 100%)',
+          price: 'RM 8.90',
+          cta: 'Visit Restaurant',
+          placeId: 'ChIJO86z4DtNzDERmOLc_7N_qhA'
+        }
+      ]
     }
-  ];
+  };
+
+  // Determine which ads to show based on category
+  const getAdsToShow = () => {
+    // Normalize category name
+    const normalizedCategory = restaurantCategory?.toLowerCase() || '';
+    
+    // Coffee categories
+    const coffeeKeywords = ['coffee', 'cafe', 'tea', 'beverage'];
+    const isCoffee = coffeeKeywords.some(keyword => normalizedCategory.includes(keyword));
+    
+    // Malaysian categories
+    const malaysianKeywords = ['malaysian', 'local', 'malay', 'nasi lemak', 'roti', 'satay'];
+    const isMalaysian = malaysianKeywords.some(keyword => normalizedCategory.includes(keyword));
+
+    // Return the appropriate ads, or random if ambiguous
+    if (isCoffee && !isMalaysian) {
+      return adConfigs.farCoffee;
+    } else if (isMalaysian && !isCoffee) {
+      return adConfigs.nls;
+    } else {
+      // Both, neither, or uncertain - pick random
+      return Math.random() > 0.5 ? adConfigs.farCoffee : adConfigs.nls;
+    }
+  };
+
+  const activeAds = getAdsToShow();
+  const slides = activeAds.slides;
 
   // Auto-advance slides every 3 seconds
   useEffect(() => {
