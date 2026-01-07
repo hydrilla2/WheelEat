@@ -31,16 +31,18 @@ function ResultModal({ result, onClose, onSpinAgain }) {
   }
 
   // Get the appropriate Google Maps URL based on device type
-  // iOS: Use Google Maps web link (opens in browser or Google Maps app)
+  // iOS: Search by restaurant name + Sunway Square (more reliable on iOS)
   // Android: Try to use Google Maps app deep link, fall back to web link
   const getGoogleMapsLink = () => {
     const userAgent = navigator.userAgent.toLowerCase();
     const isIOS = /iphone|ipad|ipod/.test(userAgent);
     const isAndroid = /android/.test(userAgent);
     
-    // For iOS, always use the web link (works better with iOS)
+    // For iOS, use a search URL with restaurant name + location (works better on iOS)
     if (isIOS) {
-      return result.google_maps_url;
+      const searchQuery = `${result.restaurant_name} Sunway Square`;
+      const encodedQuery = encodeURIComponent(searchQuery);
+      return `https://maps.google.com/?q=${encodedQuery}`;
     }
     
     // For Android, try mobile deep link first if available
