@@ -31,15 +31,24 @@ function ResultModal({ result, onClose, onSpinAgain }) {
   }
 
   // Get the appropriate Google Maps URL based on device type
-  // Mobile devices with Google Maps app installed will use the deep link (comgooglemaps://)
-  // Other devices and browsers will use the web URL
+  // iOS: Use Google Maps web link (opens in browser or Google Maps app)
+  // Android: Try to use Google Maps app deep link, fall back to web link
   const getGoogleMapsLink = () => {
-    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const userAgent = navigator.userAgent.toLowerCase();
+    const isIOS = /iphone|ipad|ipod/.test(userAgent);
+    const isAndroid = /android/.test(userAgent);
     
-    if (isMobile && result.google_maps_mobile_url) {
+    // For iOS, always use the web link (works better with iOS)
+    if (isIOS) {
+      return result.google_maps_url;
+    }
+    
+    // For Android, try mobile deep link first if available
+    if (isAndroid && result.google_maps_mobile_url) {
       return result.google_maps_mobile_url;
     }
     
+    // Default to web URL
     return result.google_maps_url;
   };
 
