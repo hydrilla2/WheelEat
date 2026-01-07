@@ -129,25 +129,9 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   useEffect(() => {
     if (!showResult || !result) return;
     const key = result.spin_id || `${result.restaurant_name || ''}-${result.timestamp || ''}`;
-    if (lastVoucherOfferKeyRef.current === key && !pendingVoucherNeedsLogin) return;
+    if (lastVoucherOfferKeyRef.current === key) return;
 
-    // If guest, prompt login first and defer voucher creation
-    if (isGuest) {
-      setPendingVoucherNeedsLogin(true);
-      setPendingVoucherSpinKey(key);
-      setShowVoucherOffer(true);
-      // Placeholder voucher info for UI
-      setPendingVoucher({
-        id: 'WE-XXXXXX',
-        merchant_name: 'Far Coffee',
-        value_rm: 10,
-        logo: 'images/logo/far-coffee.png',
-        expired_at_ms: null,
-      });
-      return;
-    }
-
-    // Signed-in user: issue voucher immediately
+    // Always issue voucher for the current effective user (guest/anon or Google)
     lastVoucherOfferKeyRef.current = key;
     (async () => {
       try {
@@ -161,7 +145,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
         console.debug('Voucher spin failed:', e);
       }
     })();
-  }, [showResult, result, effectiveUserId, refreshVouchers, isGuest, pendingVoucherNeedsLogin]);
+  }, [showResult, result, effectiveUserId, refreshVouchers]);
 
   // When user logs in after being prompted, issue the voucher under the Google account
   useEffect(() => {
