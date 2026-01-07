@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import SpinWheel from './components/SpinWheel';
 import CategorySelector from './components/CategorySelector';
@@ -71,9 +71,12 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     }
   }
 
-  const effectiveUserId = user?.id ? String(user.id) : getOrCreateAnonUserId();
+  const effectiveUserId = useMemo(() => {
+    return user?.id ? String(user.id) : getOrCreateAnonUserId();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
 
-  async function refreshVouchers() {
+  const refreshVouchers = useCallback(async () => {
     try {
       const data = await fetchUserVouchers(effectiveUserId);
       // Only Far Coffee vouchers exist in this demo; keep only active vouchers in UI.
@@ -83,13 +86,12 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       console.debug('Failed to load vouchers:', e);
       setVouchers([]);
     }
-  }
+  }, [effectiveUserId]);
 
   // Load vouchers for the current user (or anon user) on mount and when user changes.
   useEffect(() => {
     refreshVouchers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [effectiveUserId]);
+  }, [refreshVouchers]);
 
   // Close header menu on outside click / escape
   useEffect(() => {
@@ -136,7 +138,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
         console.debug('Voucher spin failed:', e);
       }
     })();
-  }, [showResult, result, effectiveUserId]);
+  }, [showResult, result, effectiveUserId, refreshVouchers]);
 
   // Result "ring" sound (frontend/public/sounds/ring.mp3 -> /sounds/ring.mp3)
   useEffect(() => {
