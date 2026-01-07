@@ -1,35 +1,10 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 import './ResultModal.css';
 import { getRestaurantLocation } from '../data/restaurantLocations';
 import { getPriceRange } from '../data/priceRanges';
 
 function ResultModal({ result, onClose, onSpinAgain }) {
   if (!result) return null;
-
-  // Handle Escape key and mobile back button
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape') {
-        onClose();
-      }
-    };
-
-    // For mobile back button, we need to handle popstate
-    const handlePopState = () => {
-      onClose();
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    window.addEventListener('popstate', handlePopState);
-
-    // Push a new history state when modal opens
-    window.history.pushState({ modalOpen: true }, '');
-
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-      window.removeEventListener('popstate', handlePopState);
-    };
-  }, [onClose]);
 
   const formatTime = (timestamp) => {
     const date = new Date(timestamp);
