@@ -48,9 +48,9 @@
 }
 
 .result-modal-close {
-  position: fixed;
-  top: 20px;
-  right: 20px;
+  position: absolute;
+  top: 15px;
+  right: 15px;
   background: #f0f0f0;
   border: none;
   width: 35px;
@@ -64,7 +64,7 @@
   justify-content: center;
   transition: all 0.3s ease;
   line-height: 1;
-  z-index: 1001;
+  z-index: 10;
   min-width: 35px;
   min-height: 35px;
 }
