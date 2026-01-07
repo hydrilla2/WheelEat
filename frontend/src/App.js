@@ -8,8 +8,6 @@ import ResultModal from './components/ResultModal';
 import Login from './components/Login';
 import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
 import Leaderboard from './components/Leaderboard';
-import VoucherOfferModal from './components/VoucherOfferModal';
-import VoucherWalletModal from './components/VoucherWalletModal';
 
 function MenuIcon() {
   return (
@@ -41,58 +39,8 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef(null);
   const menuRef = useRef(null);
-  const [vouchers, setVouchers] = useState([]);
-  const [showVoucherWallet, setShowVoucherWallet] = useState(false);
-  const [showVoucherOffer, setShowVoucherOffer] = useState(false);
-  const lastVoucherOfferKeyRef = useRef(null);
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
-
-  const VOUCHER_STORAGE_KEY = 'wheeleat_vouchers';
-
-  function loadVouchers() {
-    try {
-      const raw = localStorage.getItem(VOUCHER_STORAGE_KEY);
-      if (!raw) return [];
-      const parsed = JSON.parse(raw);
-      return Array.isArray(parsed) ? parsed : [];
-    } catch {
-      return [];
-    }
-  }
-
-  function saveVouchers(next) {
-    setVouchers(next);
-    try {
-      localStorage.setItem(VOUCHER_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // ignore quota / privacy errors
-    }
-  }
-
-  function createVoucherFromResult(spinResult, valueRm) {
-    const spinId = spinResult?.spin_id || null;
-    const spinKey = spinId || `${spinResult?.restaurant_name || 'restaurant'}-${spinResult?.timestamp || Date.now()}`;
-    const short = String(spinKey).slice(-6).toUpperCase().replace(/[^A-Z0-9]/g, 'X');
-
-    return {
-      id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
-      spinId,
-      code: `WE-${short.padStart(6, 'X').slice(0, 6)}`,
-      valueRm,
-      restaurantName: spinResult?.restaurant_name || 'Selected restaurant',
-      logo: spinResult?.logo || null,
-      category: spinResult?.category || null,
-      issuedAt: new Date().toISOString(),
-      status: 'saved',
-    };
-  }
-
-  // Load vouchers once on mount (persisted in localStorage)
-  useEffect(() => {
-    saveVouchers(loadVouchers());
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   // Close header menu on outside click / escape
   useEffect(() => {
@@ -118,15 +66,6 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [menuOpen]);
-
-  // Show voucher offer whenever a spin result is shown (one offer per spin result)
-  useEffect(() => {
-    if (!showResult || !result) return;
-    const key = result.spin_id || `${result.restaurant_name || ''}-${result.timestamp || ''}`;
-    if (lastVoucherOfferKeyRef.current === key) return;
-    lastVoucherOfferKeyRef.current = key;
-    setShowVoucherOffer(true);
-  }, [showResult, result]);
 
   // Result "ring" sound (frontend/public/sounds/ring.mp3 -> /sounds/ring.mp3)
   useEffect(() => {
@@ -277,28 +216,6 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const handleCloseResult = () => {
     setShowResult(false);
     setResult(null);
-    setShowVoucherOffer(false);
-  };
-
-  const handleAcceptVoucher = ({ valueRm = 10 } = {}) => {
-    if (!result) return;
-    const v = createVoucherFromResult(result, valueRm);
-
-    // De-dupe by spinId (if present) or by code.
-    const existing = vouchers.some((x) => (v.spinId && x.spinId === v.spinId) || x.code === v.code);
-    if (!existing) {
-      saveVouchers([v, ...vouchers]);
-    }
-
-    setShowVoucherOffer(false);
-  };
-
-  const handleRemoveVoucher = (id) => {
-    saveVouchers(vouchers.filter((v) => v.id !== id));
-  };
-
-  const handleClearVouchers = () => {
-    saveVouchers([]);
   };
 
   return (
@@ -321,7 +238,6 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 <span className="header-menu-icon" aria-hidden="true">
                   <MenuIcon />
                 </span>
-                {vouchers.length > 0 ? <span className="header-menu-dot" aria-label="You have vouchers" /> : null}
               </button>
 
               {menuOpen ? (
@@ -358,20 +274,6 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                       {activeView === 'leaderboard' ? '✓' : ''}
                     </span>
                     <span className="header-menu-label">Leaderboard</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    role="menuitem"
-                    className="header-menu-item"
-                    onClick={() => {
-                      setShowVoucherWallet(true);
-                      setMenuOpen(false);
-                    }}
-                  >
-                    <span className="header-menu-check" aria-hidden="true" />
-                    <span className="header-menu-label">Vouchers</span>
-                    {vouchers.length > 0 ? <span className="header-menu-badge">{vouchers.length}</span> : null}
                   </button>
 
                   <div className="header-menu-divider" role="separator" />
@@ -462,26 +364,6 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
           onSpinAgain={handleSpin}
         />
       )}
-
-      {/* Voucher offer (pops on top of result modal) */}
-      {showResult && result && showVoucherOffer ? (
-        <VoucherOfferModal
-          result={result}
-          valueRm={10}
-          onAccept={handleAcceptVoucher}
-          onDecline={() => setShowVoucherOffer(false)}
-        />
-      ) : null}
-
-      {/* Voucher wallet */}
-      {showVoucherWallet ? (
-        <VoucherWalletModal
-          vouchers={vouchers}
-          onClose={() => setShowVoucherWallet(false)}
-          onRemove={handleRemoveVoucher}
-          onClear={handleClearVouchers}
-        />
-      ) : null}
     </div>
   );
 }
