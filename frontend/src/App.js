@@ -163,26 +163,33 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
 
   // Load restaurants when categories or mall changes
   useEffect(() => {
-    if (selectedCategories.length > 0 && mallId) {
-      fetchRestaurants({ categories: selectedCategories, mallId, dietaryNeed })
-        .then((data) => setRestaurants(data.restaurants))
-        .catch((err) => {
-          console.error('Failed to load restaurants:', err);
-          setRestaurants([]);
-        });
+    if (mallId) {
+      // If no categories selected, fetch all categories first
+      const categoriesToFetch = selectedCategories.length > 0 ? selectedCategories : categories;
+      if (categoriesToFetch.length > 0) {
+        fetchRestaurants({ categories: categoriesToFetch, mallId, dietaryNeed })
+          .then((data) => setRestaurants(data.restaurants))
+          .catch((err) => {
+            console.error('Failed to load restaurants:', err);
+            setRestaurants([]);
+          });
+      }
     } else {
       setRestaurants([]);
     }
-  }, [selectedCategories, mallId, dietaryNeed]);
+  }, [selectedCategories, mallId, dietaryNeed, categories]);
 
   const handleSpin = async () => {
-    if (selectedCategories.length === 0) {
-      setError('Please select at least one restaurant category');
+    // If no categories selected, use all categories
+    const categoriesToUse = selectedCategories.length > 0 ? selectedCategories : categories;
+    
+    if (categoriesToUse.length === 0) {
+      setError('No restaurant categories available');
       return;
     }
 
     if (restaurants.length === 0) {
-      setError('No restaurants found in selected categories');
+      setError('No restaurants found');
       return;
     }
 
@@ -195,7 +202,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
 
     // Get the result immediately (while spinning) but don't show it yet
     try {
-      const data = await spinWheel({ selectedCategories, mallId, dietaryNeed });
+      const data = await spinWheel({ selectedCategories: categoriesToUse, mallId, dietaryNeed });
       // Set result for wheel calculation, but don't show modal yet
       setResult(data);
       
@@ -328,7 +335,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               <button
                 className="spin-button"
                 onClick={handleSpin}
-                disabled={spinning || selectedCategories.length === 0 || restaurants.length === 0}
+                disabled={spinning || restaurants.length === 0}
               >
                 {spinning ? 'Spinning...' : '🎰 Spin the Wheel!'}
               </button>
