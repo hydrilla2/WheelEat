@@ -637,28 +637,47 @@ function App() {
   }, []);
 
   // Handle login success
-  const handleLogin = async (userData, previousUserId = null) => {
+  const handleLogin = async (userData, previousUserIdFromLogin = null) => {
     console.log('=== handleLogin called ===');
     console.log('User data received:', userData);
-    console.log('Previous user ID (from Login component):', previousUserId);
-    
-    // Check if previous user was a guest
-    let isGuest = false;
-    if (previousUserId) {
-      isGuest = String(previousUserId).startsWith('anon_') ||
-                String(previousUserId).startsWith('guest_');
-      console.log('Previous user was guest:', isGuest);
-    }
-    
-    // If previous user was a guest and new user is Google, transfer vouchers
-    if (isGuest && previousUserId && userData && userData.loginType !== 'guest') {
+    console.log('Previous user ID (from Login component):', previousUserIdFromLogin);
+
+    // Determine guest ID that may hold vouchers:
+    // 1) Prefer explicit previousUserId from Login (guest_)
+    // 2) Fallback to anon ID used by wheel when spinning without login
+    let guestUserIdForTransfer = previousUserIdFromLogin;
+    if (!guestUserIdForTransfer) {
       try {
-        console.log('Transferring vouchers from guest to Google account...', {
-          guestUserId: previousUserId,
-          googleUserId: userData.id
+        const anonId = localStorage.getItem('wheeleat_anon_user_id');
+        if (anonId) {
+          guestUserIdForTransfer = anonId;
+          console.log('Using anon user ID for voucher transfer:', anonId);
+        }
+      } catch (e) {
+        console.debug('Could not read anon user id:', e);
+      }
+    }
+
+    let isGuestSource = false;
+    if (guestUserIdForTransfer) {
+      isGuestSource =
+        String(guestUserIdForTransfer).startsWith('anon_') ||
+        String(guestUserIdForTransfer).startsWith('guest_');
+    }
+    console.log('Guest source for transfer:', {
+      guestUserIdForTransfer,
+      isGuestSource,
+    });
+
+    // If previous user was a guest/anon and new user is Google, transfer vouchers
+    if (isGuestSource && guestUserIdForTransfer && userData && userData.loginType !== 'guest') {
+      try {
+        console.log('Transferring vouchers from guest/anon to Google account...', {
+          guestUserId: guestUserIdForTransfer,
+          googleUserId: userData.id,
         });
         const result = await transferVouchers({
-          guestUserId: previousUserId,
+          guestUserId: guestUserIdForTransfer,
           googleUserId: userData.id,
         });
         console.log('Voucher transfer result:', result);
@@ -673,19 +692,18 @@ function App() {
         // Continue with login even if transfer fails
       }
     } else {
-      console.log('Skipping transfer:', { isGuest, previousUserId, hasUserData: !!userData, userLoginType: userData?.loginType });
+      console.log('Skipping transfer:', {
+        isGuestSource,
+        guestUserIdForTransfer,
+        hasUserData: !!userData,
+        userLoginType: userData?.loginType,
+      });
     }
-    
+
     setUser(userData);
     setShowLogin(false);
     console.log('User state updated');
     // User data is already saved in localStorage by Login component
-    
-    // Small delay to ensure database updates are reflected before vouchers refresh
-    // The useEffect in WheelEatApp will automatically refresh vouchers when user.id changes
-    setTimeout(() => {
-      console.log('Vouchers should refresh automatically via useEffect');
-    }, 500);
   };
 
   const handleLogout = () => {
