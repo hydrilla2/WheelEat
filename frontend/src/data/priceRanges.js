@@ -13,7 +13,7 @@ export const priceRanges = {
   "Christine's Bakery Cafe": 'RM20-40',
   'CHUCHAT': 'RM1-20',
   'Coffee Bean': 'RM20-40',
-  'Come Buy Yakiniku': 'RM40-60',
+  'Yakiniku Smile': 'RM40-60',
   'Count (Flower Drum)': 'RM20-60',
   'CU Mart': 'RM1-20',
   'DOZO': 'RM20-60',

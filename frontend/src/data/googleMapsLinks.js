@@ -13,7 +13,7 @@ export const googleMapsLinks = {
   "Christine's Bakery Cafe": 'https://maps.app.goo.gl/Vzi3pQPYAb4VPVWB7',
   'CHUCHAT': 'https://maps.app.goo.gl/HdHo9caEHwqE7FR46',
   'Coffee Bean': 'https://maps.app.goo.gl/8UQKcnuq4poo2TtP7',
-  'Come Buy Yakiniku': 'https://maps.app.goo.gl/ieY95nnWVsQeYHQJ7',
+  'Yakiniku Smile': 'https://maps.app.goo.gl/ieY95nnWVsQeYHQJ7',
   'Count (Flower Drum)': 'https://maps.app.goo.gl/iPbZbNnu8CbcaND67',
   'CU Mart': 'https://maps.app.goo.gl/81pYamF1w1PyF43R6',
   'DOZO': 'https://maps.app.goo.gl/fqCY31DUaC8ChX3o6',

@@ -1,6 +1,7 @@
 import React from 'react';
 import './ResultModal.css';
 import { getRestaurantLocation } from '../data/restaurantLocations';
+import { getPriceRange } from '../data/priceRanges';
 
 function ResultModal({ result, onClose, onSpinAgain }) {
   if (!result) return null;
@@ -94,6 +95,10 @@ function ResultModal({ result, onClose, onSpinAgain }) {
             <div className="result-detail-item">
               <span className="detail-label">🍽️ Category:</span>
               <span className="detail-value">{result.category}</span>
+            </div>
+            <div className="result-detail-item">
+              <span className="detail-label">💰 Price Range:</span>
+              <span className="detail-value">{getPriceRange(result.restaurant_name)}</span>
             </div>
             {result.google_maps_url && (
               <div className="result-detail-item">

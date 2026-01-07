@@ -13,7 +13,7 @@ export const restaurantLocations = {
   "Christine's Bakery Cafe": 'https://www.sunwaysquare.com/mall/directory/christines-bakery-café',
   'CHUCHAT': 'https://www.sunwaysquare.com/mall/directory/chuchat',
   'Coffee Bean': 'https://www.sunwaysquare.com/mall/directory/coffee-bean',
-  'Come Buy Yakiniku': 'https://www.sunwaysquare.com/mall/directory/yakiniku-smile',
+  'Yakiniku Smile': 'https://www.sunwaysquare.com/mall/directory/yakiniku-smile',
   'Count (Flower Drum)': 'https://www.sunwaysquare.com/mall/directory/count-flower-drum',
   'CU Mart': 'https://www.sunwaysquare.com/mall/directory/cu-mart',
   'DOZO': 'https://www.sunwaysquare.com/mall/directory/dozo',
