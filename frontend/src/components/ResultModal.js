@@ -1,6 +1,5 @@
 import React from 'react';
 import './ResultModal.css';
-import RestaurantAdBanner from './RestaurantAdBanner';
 import { getRestaurantLocation } from '../data/restaurantLocations';
 
 function ResultModal({ result, onClose, onSpinAgain }) {
@@ -50,9 +49,6 @@ function ResultModal({ result, onClose, onSpinAgain }) {
       <div className="result-modal" onClick={(e) => e.stopPropagation()}>
         <button className="result-modal-close" onClick={onClose}>×</button>
         <div className="result-modal-content">
-          {/* Restaurant Ad Banner inside modal */}
-          <RestaurantAdBanner variant="modal" restaurantCategory={result.category} />
-          
           <div className="result-icon">🎉</div>
           
           {/* Display restaurant logo if available */}
