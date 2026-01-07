@@ -54,6 +54,8 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [showVoucherWallet, setShowVoucherWallet] = useState(false);
   const [showVoucherOffer, setShowVoucherOffer] = useState(false);
   const [pendingVoucher, setPendingVoucher] = useState(null);
+  const [pendingVoucherNeedsLogin, setPendingVoucherNeedsLogin] = useState(false);
+  const [pendingVoucherSpinKey, setPendingVoucherSpinKey] = useState(null);
   const lastVoucherOfferKeyRef = useRef(null);
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
@@ -75,6 +77,10 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     return user?.id ? String(user.id) : getOrCreateAnonUserId();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  const isGuest = useMemo(() => {
+    return !user || user.loginType === 'guest' || String(user?.id || '').startsWith('anon_');
+  }, [user]);
 
   const refreshVouchers = useCallback(async () => {
     try {
@@ -122,10 +128,26 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   useEffect(() => {
     if (!showResult || !result) return;
     const key = result.spin_id || `${result.restaurant_name || ''}-${result.timestamp || ''}`;
-    if (lastVoucherOfferKeyRef.current === key) return;
-    lastVoucherOfferKeyRef.current = key;
+    if (lastVoucherOfferKeyRef.current === key && !pendingVoucherNeedsLogin) return;
 
-    // Demo voucher spin: Far Coffee RM10 (guaranteed win if stock available + before expiry)
+    // If guest, prompt login first and defer voucher creation
+    if (isGuest) {
+      setPendingVoucherNeedsLogin(true);
+      setPendingVoucherSpinKey(key);
+      setShowVoucherOffer(true);
+      // Placeholder voucher info for UI
+      setPendingVoucher({
+        id: 'WE-XXXXXX',
+        merchant_name: 'Far Coffee',
+        value_rm: 10,
+        logo: 'images/logo/far-coffee.png',
+        expired_at_ms: null,
+      });
+      return;
+    }
+
+    // Signed-in user: issue voucher immediately
+    lastVoucherOfferKeyRef.current = key;
     (async () => {
       try {
         const out = await spinFarCoffeeVoucher(effectiveUserId);
@@ -138,7 +160,32 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
         console.debug('Voucher spin failed:', e);
       }
     })();
-  }, [showResult, result, effectiveUserId, refreshVouchers]);
+  }, [showResult, result, effectiveUserId, refreshVouchers, isGuest, pendingVoucherNeedsLogin]);
+
+  // When user logs in after being prompted, issue the voucher under the Google account
+  useEffect(() => {
+    if (!pendingVoucherNeedsLogin) return;
+    if (isGuest) return;
+    if (!pendingVoucherSpinKey) return;
+
+    const key = pendingVoucherSpinKey;
+    lastVoucherOfferKeyRef.current = key;
+    (async () => {
+      try {
+        const out = await spinFarCoffeeVoucher(effectiveUserId);
+        if (out?.won && out?.userVoucher) {
+          setPendingVoucher(out.userVoucher);
+          setShowVoucherOffer(true);
+          await refreshVouchers();
+        }
+      } catch (e) {
+        console.debug('Voucher spin (post-login) failed:', e);
+      } finally {
+        setPendingVoucherNeedsLogin(false);
+        setPendingVoucherSpinKey(null);
+      }
+    })();
+  }, [pendingVoucherNeedsLogin, isGuest, pendingVoucherSpinKey, effectiveUserId, refreshVouchers]);
 
   // Result "ring" sound (frontend/public/sounds/ring.mp3 -> /sounds/ring.mp3)
   useEffect(() => {

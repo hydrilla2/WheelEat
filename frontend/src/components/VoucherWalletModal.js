@@ -16,6 +16,15 @@ function formatDateFromMs(ms) {
   }
 }
 
+function formatExpiry(ms) {
+  if (!ms) return '';
+  try {
+    return new Date(Number(ms)).toLocaleString();
+  } catch {
+    return '';
+  }
+}
+
 export default function VoucherWalletModal({ vouchers, onClose, onRemove, onClear }) {
   const list = Array.isArray(vouchers) ? vouchers : [];
   const [claimingVoucher, setClaimingVoucher] = useState(null);
@@ -68,6 +77,11 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onClea
                       <div className="voucher-wallet-meta">
                         <span className="voucher-wallet-code">{code}</span>
                         <span className="voucher-wallet-date">{formatDateFromMs(v.issued_at_ms)}</span>
+                        {v.expired_at_ms ? (
+                          <span className="voucher-wallet-date">
+                            Expires: {formatExpiry(v.expired_at_ms)}
+                          </span>
+                        ) : null}
                       </div>
                     </div>
 
