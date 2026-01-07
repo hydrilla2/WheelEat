@@ -58,29 +58,28 @@ export async function expireFarCoffeeVouchers(env, nowMs = Date.now()) {
   const db = getD1Database(env);
   const expiryMs = malaysiaToday5pmUtcMs(nowMs);
 
-  const expireRes = await db
-    .prepare(
-      `UPDATE user_vouchers
-       SET status='expired', updated_at_ms=?
-       WHERE voucher_id=?
-         AND status='active'
-         AND expired_at_ms <= ?`
-    )
-    .bind(nowMs, FAR_COFFEE_VOUCHER_ID, nowMs)
-    .run();
-
-  const expiredCount = expireRes?.meta?.changes || 0;
-  if (expiredCount > 0) {
-    await db
+  // Use a transactional batch + SQLite `changes()` so restock count matches exactly how many rows were expired.
+  // This avoids relying on data-modifying CTEs/RETURNING behavior differences across D1 builds.
+  const batchRes = await db.batch([
+    db
+      .prepare(
+        `UPDATE user_vouchers
+         SET status='expired', updated_at_ms=?
+         WHERE voucher_id=?
+           AND status='active'
+           AND expired_at_ms <= ?`
+      )
+      .bind(nowMs, FAR_COFFEE_VOUCHER_ID, nowMs),
+    db
       .prepare(
         `UPDATE vouchers
-         SET remaining_qty = MIN(total_qty, remaining_qty + ?),
+         SET remaining_qty = MIN(total_qty, remaining_qty + changes()),
              updated_at_ms=?
          WHERE id=?`
       )
-      .bind(expiredCount, nowMs, FAR_COFFEE_VOUCHER_ID)
-      .run();
-  }
+      .bind(nowMs, FAR_COFFEE_VOUCHER_ID),
+  ]);
+  const expiredCount = Number(batchRes?.[0]?.meta?.changes || 0);
 
   // Keep expiry in sync for today.
   await db
@@ -121,65 +120,67 @@ export async function spinFarCoffeeVoucher(env, userId, nowMs = Date.now()) {
   const userVoucherId = generateUUID();
   const issuedAtMs = nowMs;
 
-  // Single-statement, database-safe issue using CTE + RETURNING.
-  const stmt = `
-    WITH dec AS (
-      UPDATE vouchers
-      SET remaining_qty = remaining_qty - 1,
-          updated_at_ms = ?
-      WHERE id = ?
-        AND remaining_qty > 0
-        AND expires_at_ms > ?
-      RETURNING id
-    ),
-    ins AS (
-      INSERT INTO user_vouchers (
-        id, user_id, voucher_id, status, issued_at_ms, expired_at_ms, removed_at_ms, updated_at_ms
+  // Atomic issue using D1 transactional batch + SQLite `changes()`.
+  //
+  // 1) decrement stock iff remaining_qty > 0 and not expired
+  // 2) insert user voucher only if step (1) actually updated a row (changes() == 1)
+  await db.batch([
+    db
+      .prepare(
+        `UPDATE vouchers
+         SET remaining_qty = remaining_qty - 1,
+             updated_at_ms = ?
+         WHERE id = ?
+           AND remaining_qty > 0
+           AND expires_at_ms > ?`
       )
-      SELECT
-        ?, ?, ?, 'active', ?, (SELECT expires_at_ms FROM vouchers WHERE id=?), NULL, ?
-      WHERE EXISTS (SELECT 1 FROM dec)
-      RETURNING id
+      .bind(nowMs, FAR_COFFEE_VOUCHER_ID, nowMs),
+    db
+      .prepare(
+        `INSERT INTO user_vouchers (
+           id, user_id, voucher_id, status, issued_at_ms, expired_at_ms, removed_at_ms, updated_at_ms
+         )
+         SELECT
+           ?, ?, ?, 'active', ?, (SELECT expires_at_ms FROM vouchers WHERE id=?), NULL, ?
+         WHERE changes() = 1`
+      )
+      .bind(
+        userVoucherId,
+        String(userId),
+        FAR_COFFEE_VOUCHER_ID,
+        issuedAtMs,
+        FAR_COFFEE_VOUCHER_ID,
+        nowMs
+      ),
+  ]);
+
+  const after = await db
+    .prepare(`SELECT remaining_qty, expires_at_ms FROM vouchers WHERE id=?`)
+    .bind(FAR_COFFEE_VOUCHER_ID)
+    .first();
+
+  const uv = await db
+    .prepare(
+      `SELECT id FROM user_vouchers
+       WHERE id=? AND user_id=? AND voucher_id=? AND status='active'`
     )
-    SELECT
-      (SELECT COUNT(*) FROM ins) AS issued,
-      (SELECT remaining_qty FROM vouchers WHERE id=?) AS remaining_qty,
-      (SELECT expires_at_ms FROM vouchers WHERE id=?) AS expires_at_ms;
-  `;
+    .bind(userVoucherId, String(userId), FAR_COFFEE_VOUCHER_ID)
+    .first();
 
-  const res = await db
-    .prepare(stmt)
-    .bind(
-      nowMs,
-      FAR_COFFEE_VOUCHER_ID,
-      nowMs,
-      userVoucherId,
-      String(userId),
-      FAR_COFFEE_VOUCHER_ID,
-      issuedAtMs,
-      FAR_COFFEE_VOUCHER_ID,
-      nowMs,
-      FAR_COFFEE_VOUCHER_ID,
-      FAR_COFFEE_VOUCHER_ID
-    )
-    .all();
-
-  const row = res?.results?.[0] || null;
-  const issued = Number(row?.issued || 0);
-
+  const issued = Boolean(uv?.id);
   if (!issued) {
     return {
       won: false,
       reason: 'sold_out',
-      remainingQty: Number(row?.remaining_qty ?? 0),
-      expiryMs: Number(row?.expires_at_ms ?? expiryMs),
+      remainingQty: Number(after?.remaining_qty ?? 0),
+      expiryMs: Number(after?.expires_at_ms ?? expiryMs),
     };
   }
 
   return {
     won: true,
-    remainingQty: Number(row?.remaining_qty ?? 0),
-    expiryMs: Number(row?.expires_at_ms ?? expiryMs),
+    remainingQty: Number(after?.remaining_qty ?? 0),
+    expiryMs: Number(after?.expires_at_ms ?? expiryMs),
     userVoucher: {
       id: userVoucherId,
       user_id: String(userId),
@@ -188,7 +189,7 @@ export async function spinFarCoffeeVoucher(env, userId, nowMs = Date.now()) {
       value_rm: FAR_COFFEE_VALUE_RM,
       logo: FAR_COFFEE_LOGO,
       status: 'active',
-      expired_at_ms: Number(row?.expires_at_ms ?? expiryMs),
+      expired_at_ms: Number(after?.expires_at_ms ?? expiryMs),
       issued_at_ms: issuedAtMs,
     },
   };
@@ -203,42 +204,37 @@ export async function removeFarCoffeeUserVoucher(env, userId, userVoucherId, now
   // Expire past vouchers first (restock)
   await expireFarCoffeeVouchers(env, nowMs);
 
-  const stmt = `
-    WITH upd AS (
-      UPDATE user_vouchers
-      SET status='removed',
-          removed_at_ms=?,
-          updated_at_ms=?
-      WHERE id=?
-        AND user_id=?
-        AND voucher_id=?
-        AND status='active'
-      RETURNING voucher_id
-    )
-    UPDATE vouchers
-    SET remaining_qty = MIN(total_qty, remaining_qty + (SELECT COUNT(*) FROM upd)),
-        updated_at_ms=?
-    WHERE id IN (SELECT voucher_id FROM upd)
-    RETURNING (SELECT COUNT(*) FROM upd) AS released, remaining_qty;
-  `;
+  const batchRes = await db.batch([
+    db
+      .prepare(
+        `UPDATE user_vouchers
+         SET status='removed',
+             removed_at_ms=?,
+             updated_at_ms=?
+         WHERE id=?
+           AND user_id=?
+           AND voucher_id=?
+           AND status='active'`
+      )
+      .bind(nowMs, nowMs, String(userVoucherId), String(userId), FAR_COFFEE_VOUCHER_ID),
+    db
+      .prepare(
+        `UPDATE vouchers
+         SET remaining_qty = MIN(total_qty, remaining_qty + changes()),
+             updated_at_ms=?
+         WHERE id=?`
+      )
+      .bind(nowMs, FAR_COFFEE_VOUCHER_ID),
+  ]);
+  const released = Number(batchRes?.[0]?.meta?.changes || 0) > 0;
 
-  const res = await db
-    .prepare(stmt)
-    .bind(
-      nowMs,
-      nowMs,
-      String(userVoucherId),
-      String(userId),
-      FAR_COFFEE_VOUCHER_ID,
-      nowMs
-    )
-    .all();
-
-  const row = res?.results?.[0] || null;
-  const released = Number(row?.released || 0);
+  const row = await db
+    .prepare(`SELECT remaining_qty FROM vouchers WHERE id=?`)
+    .bind(FAR_COFFEE_VOUCHER_ID)
+    .first();
 
   return {
-    released: released > 0,
+    released,
     remainingQty: Number(row?.remaining_qty ?? 0),
   };
 }
