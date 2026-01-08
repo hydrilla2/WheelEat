@@ -94,6 +94,25 @@ export async function upsertUser({ id, name, email }) {
   });
 }
 
+// Register anonymous user in Cloudflare D1 database
+export async function registerAnonymousUser(anonId) {
+  try {
+    const url = buildUrl('/api/users');
+    await fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        id: anonId,
+        name: 'Guest User',
+        // email is omitted for anonymous users
+      }),
+    });
+  } catch (error) {
+    // Silently fail - don't interrupt user experience
+    console.debug('Anonymous user registration failed:', error);
+  }
+}
+
 // Leaderboard
 const LEADERBOARD_TTL_MS = 2 * 60 * 1000; // 2 minutes (frontend-side)
 
