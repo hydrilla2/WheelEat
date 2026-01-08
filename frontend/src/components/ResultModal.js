@@ -2,6 +2,8 @@ import React from 'react';
 import './ResultModal.css';
 import { getRestaurantLocation } from '../data/restaurantLocations';
 import { getPriceRange } from '../data/priceRanges';
+import { getRestaurantCoordinates } from '../services/restaurantCoordinates';
+import RestaurantMap from './RestaurantMap';
 
 function ResultModal({ result, onClose, onSpinAgain }) {
   if (!result) return null;
@@ -124,6 +126,13 @@ function ResultModal({ result, onClose, onSpinAgain }) {
               </div>
             )}
           </div>
+          
+          {/* Interactive Restaurant Map */}
+          <RestaurantMap 
+            restaurantName={result.restaurant_name}
+            coordinates={getRestaurantCoordinates(result.restaurant_name)}
+          />
+          
           <div className="result-timestamp">
             Spun at {formatTime(result.timestamp)}
           </div>
