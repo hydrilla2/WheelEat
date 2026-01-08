@@ -215,4 +215,66 @@ export async function getPageViewStats() {
   return await fetchJson(url);
 }
 
+// Session tracking functions
+export async function startSession(userId = null) {
+  try {
+    const url = buildUrl('/api/user-sessions');
+    const response = await fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'start',
+        user_id: userId,
+        user_agent: navigator.userAgent,
+        referer: document.referrer,
+      }),
+    });
+    return response.session_id;
+  } catch (error) {
+    console.debug('Session start failed:', error);
+    return null;
+  }
+}
+
+export async function sendHeartbeat(sessionId, userId = null) {
+  if (!sessionId) return;
+  try {
+    const url = buildUrl('/api/user-sessions');
+    await fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'heartbeat',
+        session_id: sessionId,
+        user_id: userId,
+      }),
+    });
+  } catch (error) {
+    console.debug('Session heartbeat failed:', error);
+  }
+}
+
+export async function endSession(sessionId) {
+  if (!sessionId) return;
+  try {
+    const url = buildUrl('/api/user-sessions');
+    await fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'end',
+        session_id: sessionId,
+      }),
+    });
+  } catch (error) {
+    console.debug('Session end failed:', error);
+  }
+}
+
+// Get session statistics
+export async function getSessionStats() {
+  const url = buildUrl('/api/user-sessions');
+  return await fetchJson(url);
+}
+
 

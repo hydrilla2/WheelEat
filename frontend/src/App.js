@@ -8,6 +8,7 @@ import ResultModal from './components/ResultModal';
 import Login from './components/Login';
 import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
 import Leaderboard from './components/Leaderboard';
+import { useSessionTracker } from './hooks/useSessionTracker';
 
 function MenuIcon() {
   return (
@@ -379,6 +380,10 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
+
+  // Track user session time
+  const userId = user?.id || null;
+  useSessionTracker(userId);
 
   // Check if user is already logged in (on page load)
   useEffect(() => {
