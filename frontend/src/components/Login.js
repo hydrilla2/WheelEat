@@ -33,11 +33,22 @@ function GuestIcon() {
 function GuestLogin({ onLogin }) {
   const handleGuestLogin = () => {
     console.log('Guest login clicked');
-    // Generate temporary guest ID
-    const guestId = 'guest_' + Math.random().toString(36).substr(2, 9) + '_' + Date.now();
+    
+    // Use persistent anonymous ID (created on first visit, reused across sessions)
+    // This ensures consistent tracking even if user doesn't explicitly click "Continue as Guest"
+    const anonIdKey = 'wheeleat_anon_user_id';
+    let anonId = localStorage.getItem(anonIdKey);
+    
+    if (!anonId) {
+      // Generate a new anonymous ID if it doesn't exist
+      const randomPart = Math.random().toString(36).substring(2, 11);
+      const timestamp = Date.now();
+      anonId = `anon_${randomPart}_${timestamp}`;
+      localStorage.setItem(anonIdKey, anonId);
+    }
     
     const guestUser = {
-      id: guestId,
+      id: anonId, // Use persistent anonymous ID
       name: 'Guest User',
       email: null,
       picture: null,

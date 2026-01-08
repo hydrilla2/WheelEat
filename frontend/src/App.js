@@ -9,6 +9,7 @@ import Login from './components/Login';
 import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
 import Leaderboard from './components/Leaderboard';
 import { useSessionTracker } from './hooks/useSessionTracker';
+import { getEffectiveUserId } from './utils/userId';
 
 function MenuIcon() {
   return (
@@ -381,8 +382,8 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
 
-  // Track user session time
-  const userId = user?.id || null;
+  // Track user session time (always use a user ID - either Google or anonymous)
+  const userId = getEffectiveUserId(user);
   useSessionTracker(userId);
 
   // Check if user is already logged in (on page load)
@@ -425,15 +426,19 @@ function App() {
     setLoading(false);
     console.log('===============================');
 
-    // Track page view
+    // Track page view (use effective user ID - Google or anonymous)
     let userId = null;
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
-        userId = userData.id || null;
+        userId = getEffectiveUserId(userData);
       } catch (e) {
-        // Ignore parse errors
+        // If parse fails, use anonymous ID
+        userId = getEffectiveUserId(null);
       }
+    } else {
+      // No saved user - use anonymous ID
+      userId = getEffectiveUserId(null);
     }
     trackPageView(window.location.pathname, userId);
   }, []);
