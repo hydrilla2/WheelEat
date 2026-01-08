@@ -310,6 +310,11 @@ function SpinWheel({ restaurants, spinning, result }) {
                 const textRadius = wheelGeom.isMobile ? 28 : 30;
                 const textPos = polarToCartesian(50, 50, textRadius, mid);
                 const fill = palette[i % palette.length];
+                
+                // Rotate text to align with the radial line (slice divider)
+                // mid is the angle from positive x-axis, so we use it directly for rotation
+                // SVG rotate() rotates from positive x-axis, so mid is the correct rotation angle
+                const textRotation = mid;
 
                 return (
                   <g key={`${r.name}-${i}`}>
@@ -325,7 +330,7 @@ function SpinWheel({ restaurants, spinning, result }) {
                       paintOrder="stroke"
                       stroke="rgba(0,0,0,0.18)"
                       strokeWidth="0.6"
-                      transform={`rotate(${mid + 90} ${textPos.x} ${textPos.y})`}
+                      transform={`rotate(${textRotation} ${textPos.x} ${textPos.y})`}
                     >
                       {label}
                     </text>
