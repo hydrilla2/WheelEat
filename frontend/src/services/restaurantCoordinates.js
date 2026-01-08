@@ -1,5 +1,75 @@
-import { getRestaurantCoordinates as getCoords } from '../api/lib/restaurant-places';
+// Restaurant coordinates database - all restaurants at Sunway Square
+const coordinatesMap = {
+  '103 Coffee': { lat: 3.0437, lng: 101.5761 },
+  "A'Decade": { lat: 3.0440, lng: 101.5762 },
+  'Armoury Steakhouse': { lat: 3.0436, lng: 101.5760 },
+  'Ba Shu Jia Yan': { lat: 3.0436, lng: 101.5760 },
+  'Beutea': { lat: 3.0435, lng: 101.5759 },
+  'Black Canyon': { lat: 3.0437, lng: 101.5761 },
+  'Bread History': { lat: 3.0435, lng: 101.5759 },
+  'Chagee': { lat: 3.0437, lng: 101.5761 },
+  'ChaPanda': { lat: 3.0440, lng: 101.5762 },
+  'Chatramue': { lat: 3.0435, lng: 101.5759 },
+  "Christine's Bakery Cafe": { lat: 3.0437, lng: 101.5761 },
+  'CHUCHAT': { lat: 3.0437, lng: 101.5761 },
+  'Coffee Bean': { lat: 3.0437, lng: 101.5761 },
+  'Yakiniku Smile': { lat: 3.0436, lng: 101.5760 },
+  'Count (Flower Drum)': { lat: 3.0436, lng: 101.5760 },
+  'CU Mart': { lat: 3.0440, lng: 101.5762 },
+  'DOZO': { lat: 3.0437, lng: 101.5761 },
+  'Empire Sushi': { lat: 3.0435, lng: 101.5759 },
+  'Far Coffee': { lat: 3.0440, lng: 101.5762 },
+  'Fong Woh Tong': { lat: 3.0435, lng: 101.5759 },
+  'Gong Luck Cafe': { lat: 3.0437, lng: 101.5761 },
+  'Gokoku Japanese Bakery': { lat: 3.0437, lng: 101.5761 },
+  'Gong Cha': { lat: 3.0440, lng: 101.5762 },
+  'Hock Kee Kopitiam': { lat: 3.0437, lng: 101.5761 },
+  'Han Bun Sik': { lat: 3.0440, lng: 101.5762 },
+  'Happy Potato': { lat: 3.0440, lng: 101.5762 },
+  "I'm Bagel": { lat: 3.0440, lng: 101.5762 },
+  'I LIKE & Yogurt In A Can': { lat: 3.0440, lng: 101.5762 },
+  'JP & CO': { lat: 3.0437, lng: 101.5761 },
+  'Kanteen': { lat: 3.0437, lng: 101.5761 },
+  'Kenangan Coffee': { lat: 3.0440, lng: 101.5762 },
+  'Kedai Kopi Malaya': { lat: 3.0435, lng: 101.5759 },
+  'Kha Coffee Roaster': { lat: 3.0435, lng: 101.5759 },
+  'LLAO LLAO': { lat: 3.0437, lng: 101.5761 },
+  'Luckin': { lat: 3.0437, lng: 101.5761 },
+  'Manjoe': { lat: 3.0437, lng: 101.5761 },
+  'Mr. Wu': { lat: 3.0436, lng: 101.5760 },
+  'Missy Sushi': { lat: 3.0436, lng: 101.5760 },
+  'Nasi Lemak Shop': { lat: 3.0435, lng: 101.5759 },
+  'Nine Dragon Char Chan Teng (Kowloon Cafe)': { lat: 3.0435, lng: 101.5759 },
+  'Nippon Sushi': { lat: 3.0435, lng: 101.5759 },
+  'Odon Beyond': { lat: 3.0437, lng: 101.5761 },
+  'One Dish One Taste': { lat: 3.0435, lng: 101.5759 },
+  'Pak Curry': { lat: 3.0435, lng: 101.5759 },
+  'Ramen Mob': { lat: 3.0437, lng: 101.5761 },
+  'Richeese Factory': { lat: 3.0435, lng: 101.5759 },
+  'Sweetie': { lat: 3.0435, lng: 101.5759 },
+  'Salad Atelier': { lat: 3.0437, lng: 101.5761 },
+  'Super Matcha': { lat: 3.0437, lng: 101.5761 },
+  'Shabuyaki by Nippon Sushi': { lat: 3.0436, lng: 101.5760 },
+  "Stuff'D": { lat: 3.0435, lng: 101.5759 },
+  'Subway': { lat: 3.0435, lng: 101.5759 },
+  'The Public House': { lat: 3.0437, lng: 101.5761 },
+  'Tealive Plus': { lat: 3.0440, lng: 101.5762 },
+  'Tang Gui Fei Tanghulu': { lat: 3.0440, lng: 101.5762 },
+  'The Walking Hotpot Signature': { lat: 3.0440, lng: 101.5762 },
+  'The Chicken Rice Shop': { lat: 3.0435, lng: 101.5759 },
+  'Yellow Bento': { lat: 3.0440, lng: 101.5762 },
+  'Yonny': { lat: 3.0437, lng: 101.5761 },
+  'Yakiniku Smile MY': { lat: 3.0436, lng: 101.5760 },
+  'Yama by Hojichaya': { lat: 3.0440, lng: 101.5762 },
+  'Yogurt Planet': { lat: 3.0435, lng: 101.5759 },
+  'Zus Coffee': { lat: 3.0437, lng: 101.5761 },
+  'Zok Noodle House': { lat: 3.0440, lng: 101.5762 },
+};
 
-export const getRestaurantCoordinates = (restaurantName, mallId = 'sunway_square') => {
-  return getCoords(restaurantName, mallId);
+// Sunway Square center coordinates (default/fallback)
+const DEFAULT_COORDINATES = { lat: 3.0437, lng: 101.5761 };
+
+// Get restaurant coordinates
+export const getRestaurantCoordinates = (restaurantName) => {
+  return coordinatesMap[restaurantName] || DEFAULT_COORDINATES;
 };
