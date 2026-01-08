@@ -113,18 +113,6 @@ function ResultModal({ result, onClose, onSpinAgain }) {
               <span className="detail-label">💰 Price Range:</span>
               <span className="detail-value">{getPriceRange(result.restaurant_name)}</span>
             </div>
-            {result.google_maps_url && (
-              <div className="result-detail-item">
-                <a 
-                  href={googleMapsLink} 
-                  target="_blank" 
-                  rel="noopener noreferrer"
-                  className="google-maps-link"
-                >
-                  🗺️ Open in Google Maps
-                </a>
-              </div>
-            )}
           </div>
           
           {/* Interactive Restaurant Map */}
@@ -132,6 +120,19 @@ function ResultModal({ result, onClose, onSpinAgain }) {
             restaurantName={result.restaurant_name}
             coordinates={getRestaurantCoordinates(result.restaurant_name)}
           />
+          
+          {result.google_maps_url && (
+            <div className="result-detail-item">
+              <a 
+                href={googleMapsLink} 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="google-maps-link"
+              >
+                🗺️ Open in Google Maps
+              </a>
+            </div>
+          )}
           
           <div className="result-timestamp">
             Spun at {formatTime(result.timestamp)}
