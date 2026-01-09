@@ -741,10 +741,12 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                       <div className="voucher-card-grid">
                         {vouchersForRestaurant.map((voucher, index) => (
                           <div key={`${r.name}-voucher-${index}`} className="voucher-card">
-                            <div className="voucher-card-value">{voucher.value}</div>
-                            <div className="voucher-card-info">
-                              <div className="voucher-card-restaurant">{voucher.restaurant}</div>
-                              <div className="voucher-card-min">{voucher.minSpend}</div>
+                            <div className="voucher-card-leftcol">
+                              <div className="voucher-card-value">{voucher.value}</div>
+                              <div className="voucher-card-info">
+                                <div className="voucher-card-restaurant">{voucher.restaurant}</div>
+                                <div className="voucher-card-min">{voucher.minSpend}</div>
+                              </div>
                             </div>
                             <div className="voucher-card-actions">
                               <div className="voucher-card-left">
@@ -871,10 +873,12 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                   .filter((voucher) => voucher.restaurant === featuredDetail.name)
                   .map((voucher, index) => (
                   <div key={`voucher-${index}`} className="voucher-card">
-                    <div className="voucher-card-value">{voucher.value}</div>
-                    <div className="voucher-card-info">
-                      <div className="voucher-card-restaurant">{voucher.restaurant}</div>
-                      <div className="voucher-card-min">{voucher.minSpend}</div>
+                    <div className="voucher-card-leftcol">
+                      <div className="voucher-card-value">{voucher.value}</div>
+                      <div className="voucher-card-info">
+                        <div className="voucher-card-restaurant">{voucher.restaurant}</div>
+                        <div className="voucher-card-min">{voucher.minSpend}</div>
+                      </div>
                     </div>
                     <div className="voucher-card-actions">
                       <div className="voucher-card-left">{voucher.left} vouchers left</div>

@@ -652,6 +652,12 @@ header h1 {
   scroll-snap-align: start;
 }
 
+.voucher-card-leftcol {
+  display: grid;
+  gap: 6px;
+  text-align: left;
+}
+
 .voucher-card-value {
   font-weight: 900;
   color: #3f4fd1;
