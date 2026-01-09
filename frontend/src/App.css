@@ -623,18 +623,24 @@ header h1 {
 
 .voucher-card-grid {
   display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(220px, 1fr);
   gap: 12px;
+  overflow-x: auto;
+  padding-bottom: 6px;
+  scroll-snap-type: x mandatory;
 }
 
 .voucher-card {
   border: 1px solid rgba(102, 126, 234, 0.18);
   border-radius: 16px;
-  padding: 14px;
+  padding: 12px;
   background: #f8f9ff;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 10px;
+  scroll-snap-align: start;
 }
 
 .voucher-card-value {
@@ -643,10 +649,28 @@ header h1 {
   font-size: 1.1rem;
 }
 
+.voucher-card-info {
+  display: grid;
+  gap: 4px;
+  flex: 1;
+}
+
+.voucher-card-restaurant {
+  font-weight: 800;
+  color: #2d3748;
+  font-size: 0.95rem;
+}
+
 .voucher-card-min {
   color: #4a5568;
   font-weight: 600;
   font-size: 0.9rem;
+}
+
+.voucher-card-left {
+  color: #667eea;
+  font-weight: 700;
+  font-size: 0.85rem;
 }
 
 .voucher-card-cta {

@@ -82,9 +82,10 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
 
   const promoVouchers = useMemo(
     () => [
-      { value: 'RM 5', minSpend: 'Min spend RM 30' },
-      { value: 'RM 5', minSpend: 'Min spend RM 30' },
-      { value: 'RM 5', minSpend: 'Min spend RM 30' },
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Far Coffee', left: 10 },
     ],
     []
   );
@@ -317,13 +318,17 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       return;
     }
 
-    const featured = allRestaurants.find((r) => r.name === 'Ba Shu Jia Yan');
-    const copy = featured ? [featured] : [...allRestaurants];
+    const featuredPrimary = allRestaurants.find((r) => r.name === 'Ba Shu Jia Yan');
+    const featuredSecondary = allRestaurants.find((r) => r.name === 'Far Coffee');
+    const copy = [featuredPrimary, featuredSecondary].filter(Boolean);
+    if (copy.length === 0) {
+      copy.push(...allRestaurants);
+    }
     for (let i = copy.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-    setSpotlightList(copy.slice(0, Math.min(1, copy.length)));
+    setSpotlightList(copy.slice(0, Math.min(2, copy.length)));
     setSpotlightIndex(0);
   }, [allRestaurants, mallId]);
 
@@ -717,7 +722,11 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               {promoVouchers.map((voucher, index) => (
                 <div key={`list-voucher-${index}`} className="voucher-card">
                   <div className="voucher-card-value">{voucher.value}</div>
-                  <div className="voucher-card-min">{voucher.minSpend}</div>
+                  <div className="voucher-card-info">
+                    <div className="voucher-card-restaurant">{voucher.restaurant}</div>
+                    <div className="voucher-card-min">{voucher.minSpend}</div>
+                    <div className="voucher-card-left">{voucher.left} left</div>
+                  </div>
                   <button
                     type="button"
                     className="voucher-card-cta"
@@ -777,15 +786,18 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               </div>
               <div className="restaurant-detail-row">
                 <span className="restaurant-detail-label">Visit Instagram:</span>
-                <button
-                  type="button"
+                <a
                   className="restaurant-detail-link"
-                  onClick={(e) => {
-                    e.preventDefault();
-                  }}
+                  href={
+                    featuredDetail.name === 'Ba Shu Jia Yan'
+                      ? 'https://www.instagram.com/bashujiayansunway/'
+                      : '#'
+                  }
+                  target={featuredDetail.name === 'Ba Shu Jia Yan' ? '_blank' : undefined}
+                  rel={featuredDetail.name === 'Ba Shu Jia Yan' ? 'noopener noreferrer' : undefined}
                 >
                   Open Instagram
-                </button>
+                </a>
               </div>
               <div className="restaurant-detail-row">
                 <span className="restaurant-detail-label">Give me a review:</span>
@@ -819,7 +831,11 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 {promoVouchers.map((voucher, index) => (
                   <div key={`voucher-${index}`} className="voucher-card">
                     <div className="voucher-card-value">{voucher.value}</div>
-                    <div className="voucher-card-min">{voucher.minSpend}</div>
+                    <div className="voucher-card-info">
+                      <div className="voucher-card-restaurant">{voucher.restaurant}</div>
+                      <div className="voucher-card-min">{voucher.minSpend}</div>
+                      <div className="voucher-card-left">{voucher.left} left</div>
+                    </div>
                     <button type="button" className="voucher-card-cta">
                       Collect voucher
                     </button>
