@@ -293,12 +293,13 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       return;
     }
 
-    const copy = [...allRestaurants];
+    const featured = allRestaurants.find((r) => r.name === 'Ba Shu Jia Yan');
+    const copy = featured ? [featured] : [...allRestaurants];
     for (let i = copy.length - 1; i > 0; i -= 1) {
       const j = Math.floor(Math.random() * (i + 1));
       [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-    setSpotlightList(copy.slice(0, Math.min(6, copy.length)));
+    setSpotlightList(copy.slice(0, Math.min(1, copy.length)));
     setSpotlightIndex(0);
   }, [allRestaurants, mallId]);
 
@@ -546,6 +547,17 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 >
                   {spotlightList.length > 0 ? (
                     <>
+                      <div className="spotlight-logo">
+                        {spotlightList[spotlightIndex]?.logo ? (
+                          <img
+                            src={`/${spotlightList[spotlightIndex]?.logo}`}
+                            alt={spotlightList[spotlightIndex]?.name}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                      </div>
                       <div className="spotlight-name">
                         {spotlightList[spotlightIndex]?.name}
                       </div>
