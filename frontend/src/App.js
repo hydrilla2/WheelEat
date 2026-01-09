@@ -742,14 +742,13 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                         {vouchersForRestaurant.map((voucher, index) => (
                           <div key={`${r.name}-voucher-${index}`} className="voucher-card">
                             <div className="voucher-card-value">{voucher.value}</div>
-                            <div className="voucher-card-info">
-                            <div className="voucher-card-min">
-                              {voucher.minSpend} in {voucher.restaurant}
+                          <div className="voucher-card-info">
+                            <div className="voucher-card-restaurant">{voucher.restaurant}</div>
+                            <div className="voucher-card-min">{voucher.minSpend}</div>
+                            <div className="voucher-card-left">
+                              {voucher.left} vouchers left
                             </div>
-                              <div className="voucher-card-left">
-                                {voucher.left} vouchers left
-                              </div>
-                            </div>
+                          </div>
                             <button
                               type="button"
                               className="voucher-card-cta"
@@ -872,9 +871,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                   <div key={`voucher-${index}`} className="voucher-card">
                     <div className="voucher-card-value">{voucher.value}</div>
                     <div className="voucher-card-info">
-                      <div className="voucher-card-min">
-                        {voucher.minSpend} in {voucher.restaurant}
-                      </div>
+                      <div className="voucher-card-restaurant">{voucher.restaurant}</div>
+                      <div className="voucher-card-min">{voucher.minSpend}</div>
                       <div className="voucher-card-left">{voucher.left} vouchers left</div>
                     </div>
                     <button
