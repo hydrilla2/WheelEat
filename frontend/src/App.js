@@ -747,6 +747,9 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                               <div className="voucher-card-min">{voucher.minSpend}</div>
                             </div>
                             <div className="voucher-card-actions">
+                              <div className="voucher-card-left">
+                                {voucher.left} vouchers left
+                              </div>
                               <button
                                 type="button"
                                 className="voucher-card-cta"
@@ -761,9 +764,6 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                               >
                                 Collect voucher
                               </button>
-                              <div className="voucher-card-left">
-                                {voucher.left} vouchers left
-                              </div>
                             </div>
                           </div>
                         ))}
@@ -877,6 +877,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                       <div className="voucher-card-min">{voucher.minSpend}</div>
                     </div>
                     <div className="voucher-card-actions">
+                      <div className="voucher-card-left">{voucher.left} vouchers left</div>
                       <button
                         type="button"
                         className="voucher-card-cta"
@@ -891,7 +892,6 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                       >
                         Collect voucher
                       </button>
-                      <div className="voucher-card-left">{voucher.left} vouchers left</div>
                     </div>
                   </div>
                 ))}
