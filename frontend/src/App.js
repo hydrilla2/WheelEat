@@ -53,6 +53,8 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [showRestaurantList, setShowRestaurantList] = useState(false);
   const [spotlightIndex, setSpotlightIndex] = useState(0);
   const [spotlightList, setSpotlightList] = useState([]);
+  const [showFeaturedDetail, setShowFeaturedDetail] = useState(false);
+  const [featuredDetail, setFeaturedDetail] = useState(null);
   const menuButtonRef = useRef(null);
   const menuRef = useRef(null);
   const [vouchers, setVouchers] = useState([]);
@@ -658,16 +660,71 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
             </div>
             <div className="restaurant-list-scroll">
               {spotlightList.map((r) => (
-                <div key={r.name} className="restaurant-list-row">
-                  <div className="restaurant-list-name">{r.name}</div>
-                  <div className="restaurant-list-meta">
-                    {r.category || 'Category'}
-                    {r.unit ? ` | ${r.unit}` : ''}
-                    {r.floor ? ` | ${r.floor}` : ''}
+                <button
+                  key={r.name}
+                  type="button"
+                  className="restaurant-list-row"
+                  onClick={() => {
+                    setFeaturedDetail(r);
+                    setShowFeaturedDetail(true);
+                  }}
+                >
+                  <div className="restaurant-list-logo">
+                    {r.logo ? (
+                      <img
+                        src={`/${r.logo}`}
+                        alt={r.name}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                        }}
+                      />
+                    ) : null}
                   </div>
-                </div>
+                  <div className="restaurant-list-details">
+                    <div className="restaurant-list-name">{r.name}</div>
+                    <div className="restaurant-list-meta">
+                      {r.category || 'Category'}
+                      {r.unit ? ` | ${r.unit}` : ''}
+                      {r.floor ? ` | ${r.floor}` : ''}
+                    </div>
+                  </div>
+                </button>
               ))}
             </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showFeaturedDetail && featuredDetail ? (
+        <div
+          className="restaurant-detail-overlay"
+          onClick={() => setShowFeaturedDetail(false)}
+          role="presentation"
+        >
+          <div
+            className="restaurant-detail-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="restaurant-detail-close"
+              onClick={() => setShowFeaturedDetail(false)}
+              aria-label="Close restaurant details"
+            >
+              X
+            </button>
+            <div className="restaurant-detail-logo">
+              {featuredDetail.logo ? (
+                <img
+                  src={`/${featuredDetail.logo}`}
+                  alt={featuredDetail.name}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : null}
+            </div>
+            <h3>{featuredDetail.name}</h3>
           </div>
         </div>
       ) : null}
