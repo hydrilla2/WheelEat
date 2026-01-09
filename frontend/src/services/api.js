@@ -239,6 +239,11 @@ export async function fetchUserVouchers(userId) {
   return await fetchJson(url);
 }
 
+export async function fetchVoucherStocks(merchantNames) {
+  const url = buildUrl('/api/vouchers/stocks', { merchant_names: JSON.stringify(merchantNames || []) });
+  return await fetchJson(url);
+}
+
 export async function removeUserVoucher({ userId, userVoucherId }) {
   const url = buildUrl('/api/vouchers/remove');
   return await fetchJson(url, {

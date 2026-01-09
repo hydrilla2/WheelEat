@@ -14,6 +14,7 @@ import {
   trackPageView,
   claimRestaurantVoucher,
   fetchUserVouchers,
+  fetchVoucherStocks,
   removeUserVoucher,
   markVoucherUsed,
   transferVouchers,
@@ -64,6 +65,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   const [showVoucherWallet, setShowVoucherWallet] = useState(false);
   const [showVoucherOffer, setShowVoucherOffer] = useState(false);
   const [pendingVoucher, setPendingVoucher] = useState(null);
+  const [voucherStockByRestaurant, setVoucherStockByRestaurant] = useState({});
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
 
@@ -123,6 +125,32 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     }
   }, [effectiveUserId]);
 
+  const refreshVoucherStocks = useCallback(
+    async (merchantNames) => {
+      try {
+        const names = Array.isArray(merchantNames) ? merchantNames.filter(Boolean) : [];
+        if (names.length === 0) return;
+        const data = await fetchVoucherStocks(names);
+        const stocks = data?.stocks || {};
+        setVoucherStockByRestaurant((prev) => ({ ...prev, ...stocks }));
+      } catch (e) {
+        console.debug('Failed to load voucher stocks:', e);
+      }
+    },
+    []
+  );
+
+  // Load voucher stock counts when Restaurant-of-the-day UI is opened.
+  useEffect(() => {
+    if (!showRestaurantList) return;
+    refreshVoucherStocks(spotlightList.map((r) => r?.name));
+  }, [showRestaurantList, spotlightList, refreshVoucherStocks]);
+
+  useEffect(() => {
+    if (!showFeaturedDetail || !featuredDetail?.name) return;
+    refreshVoucherStocks([featuredDetail.name]);
+  }, [showFeaturedDetail, featuredDetail, refreshVoucherStocks]);
+
   // Load vouchers for the current user (or anon user) on mount and when user changes.
   useEffect(() => {
     refreshVouchers();
@@ -177,6 +205,14 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
         });
         if (out?.won) {
           await refreshVouchers();
+          if (out?.remainingQty !== undefined) {
+            setVoucherStockByRestaurant((prev) => ({
+              ...prev,
+              [merchantName]: { ...(prev?.[merchantName] || {}), remaining_qty: Number(out.remainingQty) },
+            }));
+          } else {
+            refreshVoucherStocks([merchantName]);
+          }
           setShowVoucherWallet(true);
         } else if (out?.reason === 'sold_out') {
           alert('Sorry, this restaurant voucher is sold out.');
@@ -187,7 +223,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
         setPendingVoucherClaim?.(null);
       }
     })();
-  }, [pendingVoucherClaim, isGuest, effectiveUserId, refreshVouchers, setPendingVoucherClaim]);
+  }, [pendingVoucherClaim, isGuest, effectiveUserId, refreshVouchers, refreshVoucherStocks, setPendingVoucherClaim]);
 
   // Result "ring" sound (frontend/public/sounds/ring.mp3 -> /sounds/ring.mp3)
   useEffect(() => {
@@ -428,6 +464,14 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
       });
       if (out?.won) {
         await refreshVouchers();
+        if (out?.remainingQty !== undefined) {
+          setVoucherStockByRestaurant((prev) => ({
+            ...prev,
+            [merchantName]: { ...(prev?.[merchantName] || {}), remaining_qty: Number(out.remainingQty) },
+          }));
+        } else {
+          refreshVoucherStocks([merchantName]);
+        }
         setShowVoucherWallet(true);
       } else if (out?.reason === 'sold_out') {
         alert('Sorry, this restaurant voucher is sold out.');
@@ -448,6 +492,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   const handleRemoveVoucher = async (userVoucherId) => {
     await removeUserVoucher({ userId: effectiveUserId, userVoucherId });
     await refreshVouchers();
+    // Removal restocks +1 in backend; refresh stocks for the featured restaurants
+    refreshVoucherStocks(spotlightList.map((r) => r?.name));
   };
 
   const handleUseVoucher = async (userVoucherId) => {
@@ -703,6 +749,10 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                 const vouchersForRestaurant = promoVouchers.filter(
                   (voucher) => voucher.restaurant === r.name
                 );
+                const dynamicLeft =
+                  voucherStockByRestaurant?.[r.name]?.remaining_qty !== undefined
+                    ? voucherStockByRestaurant[r.name].remaining_qty
+                    : null;
                 return (
                   <div key={r.name} className="featured-bundle">
                     <button
@@ -743,7 +793,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                               {voucher.minSpend} in {voucher.restaurant}
                             </div>
                               <div className="voucher-card-left">
-                                {voucher.left} vouchers left
+                                {(dynamicLeft !== null ? dynamicLeft : voucher.left)} vouchers left
                               </div>
                             </div>
                             <button
@@ -874,7 +924,12 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                       <div className="voucher-card-min">
                         {voucher.minSpend} in {voucher.restaurant}
                       </div>
-                      <div className="voucher-card-left">{voucher.left} vouchers left</div>
+                      <div className="voucher-card-left">
+                        {(voucherStockByRestaurant?.[featuredDetail.name]?.remaining_qty !== undefined
+                          ? voucherStockByRestaurant[featuredDetail.name].remaining_qty
+                          : voucher.left)}{' '}
+                        vouchers left
+                      </div>
                     </div>
                     <button
                       type="button"
