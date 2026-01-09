@@ -83,8 +83,6 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const promoVouchers = useMemo(
     () => [
       { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
-      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
-      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
       { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Far Coffee', left: 10 },
     ],
     []
@@ -686,61 +684,68 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               {spotlightList.length} total
             </div>
             <div className="restaurant-list-scroll">
-              {spotlightList.map((r) => (
-                <button
-                  key={r.name}
-                  type="button"
-                  className="restaurant-list-row"
-                  onClick={() => {
-                    setFeaturedDetail(r);
-                    setShowFeaturedDetail(true);
-                  }}
-                >
-                  <div className="restaurant-list-logo">
-                    {r.logo ? (
-                      <img
-                        src={`/${r.logo}`}
-                        alt={r.name}
-                        onError={(e) => {
-                          e.target.style.display = 'none';
-                        }}
-                      />
+              {spotlightList.map((r) => {
+                const vouchersForRestaurant = promoVouchers.filter(
+                  (voucher) => voucher.restaurant === r.name
+                );
+                return (
+                  <div key={r.name} className="featured-bundle">
+                    <button
+                      type="button"
+                      className="restaurant-list-row"
+                      onClick={() => {
+                        setFeaturedDetail(r);
+                        setShowFeaturedDetail(true);
+                      }}
+                    >
+                      <div className="restaurant-list-logo">
+                        {r.logo ? (
+                          <img
+                            src={`/${r.logo}`}
+                            alt={r.name}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="restaurant-list-details">
+                        <div className="restaurant-list-name">{r.name}</div>
+                        <div className="restaurant-list-meta">
+                          {r.category || 'Category'}
+                          {r.unit ? ` | ${r.unit}` : ''}
+                          {r.floor ? ` | ${r.floor}` : ''}
+                        </div>
+                      </div>
+                    </button>
+                    {vouchersForRestaurant.length > 0 ? (
+                      <div className="voucher-card-grid">
+                        {vouchersForRestaurant.map((voucher, index) => (
+                          <div key={`${r.name}-voucher-${index}`} className="voucher-card">
+                            <div className="voucher-card-value">{voucher.value}</div>
+                            <div className="voucher-card-info">
+                              <div className="voucher-card-min">{voucher.minSpend}</div>
+                              <div className="voucher-card-left">
+                                {voucher.left} vouchers left
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="voucher-card-cta"
+                              onClick={() => {
+                                setFeaturedDetail(r);
+                                setShowFeaturedDetail(true);
+                              }}
+                            >
+                              Collect voucher
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     ) : null}
                   </div>
-                  <div className="restaurant-list-details">
-                    <div className="restaurant-list-name">{r.name}</div>
-                    <div className="restaurant-list-meta">
-                      {r.category || 'Category'}
-                      {r.unit ? ` | ${r.unit}` : ''}
-                      {r.floor ? ` | ${r.floor}` : ''}
-                    </div>
-                  </div>
-                </button>
-              ))}
-            </div>
-            <div className="voucher-card-grid">
-              {promoVouchers.map((voucher, index) => (
-                <div key={`list-voucher-${index}`} className="voucher-card">
-                  <div className="voucher-card-value">{voucher.value}</div>
-                  <div className="voucher-card-info">
-                    <div className="voucher-card-restaurant">{voucher.restaurant}</div>
-                    <div className="voucher-card-min">{voucher.minSpend}</div>
-                    <div className="voucher-card-left">{voucher.left} left</div>
-                  </div>
-                  <button
-                    type="button"
-                    className="voucher-card-cta"
-                    onClick={() => {
-                      if (spotlightList.length > 0) {
-                        setFeaturedDetail(spotlightList[0]);
-                      }
-                      setShowFeaturedDetail(true);
-                    }}
-                  >
-                    Collect voucher
-                  </button>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
@@ -836,13 +841,14 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
             <div className="restaurant-detail-vouchers">
               <div className="restaurant-detail-promo-title">Collect voucher</div>
               <div className="voucher-card-grid">
-                {promoVouchers.map((voucher, index) => (
+                {promoVouchers
+                  .filter((voucher) => voucher.restaurant === featuredDetail.name)
+                  .map((voucher, index) => (
                   <div key={`voucher-${index}`} className="voucher-card">
                     <div className="voucher-card-value">{voucher.value}</div>
                     <div className="voucher-card-info">
-                      <div className="voucher-card-restaurant">{voucher.restaurant}</div>
                       <div className="voucher-card-min">{voucher.minSpend}</div>
-                      <div className="voucher-card-left">{voucher.left} left</div>
+                      <div className="voucher-card-left">{voucher.left} vouchers left</div>
                     </div>
                     <button type="button" className="voucher-card-cta">
                       Collect voucher

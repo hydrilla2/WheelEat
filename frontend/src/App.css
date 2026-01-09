@@ -404,6 +404,15 @@ header h1 {
   gap: 10px;
 }
 
+.featured-bundle {
+  border: 1px solid rgba(102, 126, 234, 0.18);
+  border-radius: 18px;
+  padding: 12px;
+  background: #f8f9ff;
+  display: grid;
+  gap: 10px;
+}
+
 .restaurant-list-row {
   border: 1px solid rgba(0, 0, 0, 0.08);
   border-radius: 14px;
@@ -635,7 +644,7 @@ header h1 {
   border: 1px solid rgba(102, 126, 234, 0.18);
   border-radius: 16px;
   padding: 12px;
-  background: #f8f9ff;
+  background: white;
   display: flex;
   align-items: center;
   justify-content: space-between;
