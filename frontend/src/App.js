@@ -742,27 +742,29 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                         {vouchersForRestaurant.map((voucher, index) => (
                           <div key={`${r.name}-voucher-${index}`} className="voucher-card">
                             <div className="voucher-card-value">{voucher.value}</div>
-                          <div className="voucher-card-info">
-                            <div className="voucher-card-restaurant">{voucher.restaurant}</div>
-                            <div className="voucher-card-min">{voucher.minSpend}</div>
-                            <div className="voucher-card-left">
-                              {voucher.left} vouchers left
+                            <div className="voucher-card-info">
+                              <div className="voucher-card-restaurant">{voucher.restaurant}</div>
+                              <div className="voucher-card-min">{voucher.minSpend}</div>
                             </div>
-                          </div>
-                            <button
-                              type="button"
-                              className="voucher-card-cta"
-                              onClick={() => {
-                                setPendingVoucher({
-                                  merchant_name: r.name,
-                                  merchant_logo: r.logo || null,
-                                  value_rm: 10,
-                                });
-                                setShowVoucherOffer(true);
-                              }}
-                            >
-                              Collect voucher
-                            </button>
+                            <div className="voucher-card-actions">
+                              <button
+                                type="button"
+                                className="voucher-card-cta"
+                                onClick={() => {
+                                  setPendingVoucher({
+                                    merchant_name: r.name,
+                                    merchant_logo: r.logo || null,
+                                    value_rm: 10,
+                                  });
+                                  setShowVoucherOffer(true);
+                                }}
+                              >
+                                Collect voucher
+                              </button>
+                              <div className="voucher-card-left">
+                                {voucher.left} vouchers left
+                              </div>
+                            </div>
                           </div>
                         ))}
                       </div>
@@ -873,22 +875,24 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                     <div className="voucher-card-info">
                       <div className="voucher-card-restaurant">{voucher.restaurant}</div>
                       <div className="voucher-card-min">{voucher.minSpend}</div>
+                    </div>
+                    <div className="voucher-card-actions">
+                      <button
+                        type="button"
+                        className="voucher-card-cta"
+                        onClick={() => {
+                          setPendingVoucher({
+                            merchant_name: featuredDetail.name,
+                            merchant_logo: featuredDetail.logo || null,
+                            value_rm: 10,
+                          });
+                          setShowVoucherOffer(true);
+                        }}
+                      >
+                        Collect voucher
+                      </button>
                       <div className="voucher-card-left">{voucher.left} vouchers left</div>
                     </div>
-                    <button
-                      type="button"
-                      className="voucher-card-cta"
-                      onClick={() => {
-                        setPendingVoucher({
-                          merchant_name: featuredDetail.name,
-                          merchant_logo: featuredDetail.logo || null,
-                          value_rm: 10,
-                        });
-                        setShowVoucherOffer(true);
-                      }}
-                    >
-                      Collect voucher
-                    </button>
                   </div>
                 ))}
               </div>

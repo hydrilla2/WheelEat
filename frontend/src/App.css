@@ -646,7 +646,7 @@ header h1 {
   padding: 12px;
   background: white;
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   gap: 10px;
   scroll-snap-align: start;
@@ -656,6 +656,7 @@ header h1 {
   font-weight: 900;
   color: #3f4fd1;
   font-size: 1.1rem;
+  align-self: flex-start;
 }
 
 .voucher-card-info {
@@ -680,6 +681,12 @@ header h1 {
   color: #667eea;
   font-weight: 700;
   font-size: 0.85rem;
+}
+
+.voucher-card-actions {
+  display: grid;
+  gap: 6px;
+  justify-items: end;
 }
 
 .voucher-card-cta {
