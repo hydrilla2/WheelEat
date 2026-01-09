@@ -64,7 +64,6 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   const [showVoucherWallet, setShowVoucherWallet] = useState(false);
   const [showVoucherOffer, setShowVoucherOffer] = useState(false);
   const [pendingVoucher, setPendingVoucher] = useState(null);
-  const lastVoucherOfferKeyRef = useRef(null);
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
 
@@ -154,22 +153,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     };
   }, [menuOpen]);
 
-  // Show voucher offer whenever a spin result is shown (one offer per spin result).
-  // Note: We do NOT issue vouchers automatically; we only issue when user clicks "Claim".
-  useEffect(() => {
-    if (!showResult || !result) return;
-    const key = result.spin_id || `${result.restaurant_name || ''}-${result.timestamp || ''}`;
-    if (lastVoucherOfferKeyRef.current === key) return;
-
-    lastVoucherOfferKeyRef.current = key;
-    setPendingVoucher({
-      merchant_name: result.restaurant_name || 'Restaurant',
-      merchant_logo: result.logo || null,
-      value_rm: 5,
-      min_spend_rm: 30,
-    });
-    setShowVoucherOffer(true);
-  }, [showResult, result]);
+  // IMPORTANT: Voucher claiming is ONLY available via "Restaurant of the day" → "Collect voucher".
+  // Spinning the wheel should NOT open voucher popups.
 
   // Auto-claim after login (pendingVoucherClaim is stored in App so it survives unmount when showing Login).
   useEffect(() => {
