@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import './Leaderboard.css';
 import { fetchLeaderboardBatched } from '../services/api';
 import { sortLeaderboardRows } from '../utils/leaderboard';
@@ -26,13 +26,9 @@ function renderStars(rating) {
 }
 
 export default function Leaderboard({ mallId, mallName, categories }) {
-  const [mode, setMode] = useState('rating'); // draft: 'rating' | 'reviews'
-  const [draftCategories, setDraftCategories] = useState([]);
-  const [draftDietaryNeed, setDraftDietaryNeed] = useState('any');
-  const [applied, setApplied] = useState(false);
-  const [appliedCategories, setAppliedCategories] = useState([]);
-  const [appliedDietaryNeed, setAppliedDietaryNeed] = useState('any');
-  const [appliedMode, setAppliedMode] = useState('rating');
+  const [mode, setMode] = useState('rating'); // 'rating' | 'reviews'
+  const [selectedCategories, setSelectedCategories] = useState([]);
+  const [dietaryNeed, setDietaryNeed] = useState('any');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
@@ -43,7 +39,10 @@ export default function Leaderboard({ mallId, mallName, categories }) {
     setLoading(true);
     setError(null);
     setLoadingProgress('Fetching leaderboard in batches...');
-    setApplied(false);
+    // Keep UX predictable per mall change
+    setSelectedCategories([]);
+    setDietaryNeed('any');
+    setMode('rating');
 
     // Use batched fetching to ensure all restaurants are processed
     // This works around Cloudflare's subrequest limit (~50 per request)
@@ -88,17 +87,9 @@ export default function Leaderboard({ mallId, mallName, categories }) {
     return Array.from(inferred).sort();
   }, [categories, rows]);
 
-  const handleApply = useCallback(() => {
-    setApplied(true);
-    setAppliedCategories(Array.isArray(draftCategories) ? draftCategories : []);
-    setAppliedDietaryNeed(draftDietaryNeed || 'any');
-    setAppliedMode(mode || 'rating');
-  }, [draftCategories, draftDietaryNeed, mode]);
-
   const filteredRows = useMemo(() => {
-    if (!applied) return [];
-    const cats = Array.isArray(appliedCategories) ? appliedCategories : [];
-    const dietary = appliedDietaryNeed || 'any';
+    const cats = Array.isArray(selectedCategories) ? selectedCategories : [];
+    const dietary = dietaryNeed || 'any';
 
     const src = Array.isArray(rows) ? rows : [];
     return src.filter((r) => {
@@ -109,12 +100,12 @@ export default function Leaderboard({ mallId, mallName, categories }) {
       }
       return true;
     });
-  }, [applied, appliedCategories, appliedDietaryNeed, rows]);
+  }, [selectedCategories, dietaryNeed, rows]);
 
   const sorted = useMemo(() => {
     // Use shared logic so future features (trending, top picks) can reuse the same ranking behavior.
-    return sortLeaderboardRows(filteredRows, appliedMode);
-  }, [filteredRows, appliedMode]);
+    return sortLeaderboardRows(filteredRows, mode);
+  }, [filteredRows, mode]);
 
   return (
     <div className="leaderboard">
@@ -128,11 +119,11 @@ export default function Leaderboard({ mallId, mallName, categories }) {
 
         <div className="leaderboard-filters">
           <CategorySelector
-            selected={draftCategories}
-            onChange={setDraftCategories}
+            selected={selectedCategories}
+            onChange={setSelectedCategories}
             categories={availableCategories.length > 0 ? availableCategories : undefined}
           />
-          <DietarySelector value={draftDietaryNeed} onChange={setDraftDietaryNeed} />
+          <DietarySelector value={dietaryNeed} onChange={setDietaryNeed} />
 
           <div className="leaderboard-controls">
             <label>
@@ -141,10 +132,6 @@ export default function Leaderboard({ mallId, mallName, categories }) {
                 <option value="reviews">Sort: Most reviews</option>
               </select>
             </label>
-
-            <button type="button" className="leaderboard-apply" onClick={handleApply} disabled={loading}>
-              Show ranking
-            </button>
           </div>
 
           <div className="leaderboard-filter-hint">
@@ -160,7 +147,7 @@ export default function Leaderboard({ mallId, mallName, categories }) {
       ) : null}
       {error ? <div className="leaderboard-error">{error}</div> : null}
 
-      {!loading && !error && applied ? (
+      {!loading && !error ? (
         <ol className="leaderboard-list">
           {sorted.map((r, idx) => (
             <li key={`${r.name}-${idx}`} className="leaderboard-card">
@@ -215,12 +202,6 @@ export default function Leaderboard({ mallId, mallName, categories }) {
             </li>
           ))}
         </ol>
-      ) : null}
-
-      {!loading && !error && !applied ? (
-        <div className="leaderboard-empty">
-          Choose your categories and tap <strong>Show ranking</strong>.
-        </div>
       ) : null}
     </div>
   );
