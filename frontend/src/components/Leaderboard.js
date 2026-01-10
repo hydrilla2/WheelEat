@@ -1,8 +1,10 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import './Leaderboard.css';
 import { fetchLeaderboardBatched } from '../services/api';
 import { sortLeaderboardRows } from '../utils/leaderboard';
 import { getRestaurantLocation } from '../data/restaurantLocations';
+import CategorySelector from './CategorySelector';
+import DietarySelector from './DietarySelector';
 
 function clampRating(rating) {
   if (typeof rating !== 'number' || Number.isNaN(rating)) return null;
@@ -23,8 +25,14 @@ function renderStars(rating) {
   return '★'.repeat(full) + (half ? '½' : '') + '☆'.repeat(empty);
 }
 
-export default function Leaderboard({ mallId, mallName }) {
-  const [mode, setMode] = useState('rating'); // 'rating' | 'reviews'
+export default function Leaderboard({ mallId, mallName, categories }) {
+  const [mode, setMode] = useState('rating'); // draft: 'rating' | 'reviews'
+  const [draftCategories, setDraftCategories] = useState([]);
+  const [draftDietaryNeed, setDraftDietaryNeed] = useState('any');
+  const [applied, setApplied] = useState(false);
+  const [appliedCategories, setAppliedCategories] = useState([]);
+  const [appliedDietaryNeed, setAppliedDietaryNeed] = useState('any');
+  const [appliedMode, setAppliedMode] = useState('rating');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [rows, setRows] = useState([]);
@@ -35,6 +43,7 @@ export default function Leaderboard({ mallId, mallName }) {
     setLoading(true);
     setError(null);
     setLoadingProgress('Fetching leaderboard in batches...');
+    setApplied(false);
 
     // Use batched fetching to ensure all restaurants are processed
     // This works around Cloudflare's subrequest limit (~50 per request)
@@ -67,10 +76,45 @@ export default function Leaderboard({ mallId, mallName }) {
     };
   }, [mallId]);
 
+  const availableCategories = useMemo(() => {
+    // Prefer categories passed from parent; otherwise infer from rows.
+    const fromProps = Array.isArray(categories) ? categories.filter(Boolean) : [];
+    if (fromProps.length > 0) return fromProps;
+
+    const inferred = new Set();
+    for (const r of Array.isArray(rows) ? rows : []) {
+      if (r?.category) inferred.add(r.category);
+    }
+    return Array.from(inferred).sort();
+  }, [categories, rows]);
+
+  const handleApply = useCallback(() => {
+    setApplied(true);
+    setAppliedCategories(Array.isArray(draftCategories) ? draftCategories : []);
+    setAppliedDietaryNeed(draftDietaryNeed || 'any');
+    setAppliedMode(mode || 'rating');
+  }, [draftCategories, draftDietaryNeed, mode]);
+
+  const filteredRows = useMemo(() => {
+    if (!applied) return [];
+    const cats = Array.isArray(appliedCategories) ? appliedCategories : [];
+    const dietary = appliedDietaryNeed || 'any';
+
+    const src = Array.isArray(rows) ? rows : [];
+    return src.filter((r) => {
+      const catOk = cats.length === 0 ? true : cats.includes(r?.category);
+      if (!catOk) return false;
+      if (dietary === 'halal_pork_free') {
+        return Boolean(r?.isHalal);
+      }
+      return true;
+    });
+  }, [applied, appliedCategories, appliedDietaryNeed, rows]);
+
   const sorted = useMemo(() => {
     // Use shared logic so future features (trending, top picks) can reuse the same ranking behavior.
-    return sortLeaderboardRows(rows, mode);
-  }, [rows, mode]);
+    return sortLeaderboardRows(filteredRows, appliedMode);
+  }, [filteredRows, appliedMode]);
 
   return (
     <div className="leaderboard">
@@ -82,17 +126,30 @@ export default function Leaderboard({ mallId, mallName }) {
           </div>
         </div>
 
-        <div className="leaderboard-controls">
-          <label>
-            <select
-              className="leaderboard-select"
-              value={mode}
-              onChange={(e) => setMode(e.target.value)}
-            >
-              <option value="rating">Sort: Highest rating</option>
-              <option value="reviews">Sort: Most reviews</option>
-            </select>
-          </label>
+        <div className="leaderboard-filters">
+          <CategorySelector
+            selected={draftCategories}
+            onChange={setDraftCategories}
+            categories={availableCategories.length > 0 ? availableCategories : undefined}
+          />
+          <DietarySelector value={draftDietaryNeed} onChange={setDraftDietaryNeed} />
+
+          <div className="leaderboard-controls">
+            <label>
+              <select className="leaderboard-select" value={mode} onChange={(e) => setMode(e.target.value)}>
+                <option value="rating">Sort: Highest rating</option>
+                <option value="reviews">Sort: Most reviews</option>
+              </select>
+            </label>
+
+            <button type="button" className="leaderboard-apply" onClick={handleApply} disabled={loading}>
+              Show ranking
+            </button>
+          </div>
+
+          <div className="leaderboard-filter-hint">
+            If you don’t select any category, we’ll show <strong>all</strong> categories.
+          </div>
         </div>
       </div>
 
@@ -103,12 +160,27 @@ export default function Leaderboard({ mallId, mallName }) {
       ) : null}
       {error ? <div className="leaderboard-error">{error}</div> : null}
 
-      {!loading && !error ? (
+      {!loading && !error && applied ? (
         <ol className="leaderboard-list">
           {sorted.map((r, idx) => (
             <li key={`${r.name}-${idx}`} className="leaderboard-card">
               <div className="rank-badge" aria-label={`Rank ${idx + 1}`}>
                 {idx + 1}
+              </div>
+
+              <div className="leaderboard-logoWrap" aria-hidden="true">
+                {r.logo ? (
+                  <img
+                    src={`/${r.logo}`}
+                    alt=""
+                    className="leaderboard-logo"
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                    }}
+                  />
+                ) : (
+                  <div className="leaderboard-logoPlaceholder">🍽️</div>
+                )}
               </div>
 
               <div className="leaderboard-main">
@@ -127,6 +199,7 @@ export default function Leaderboard({ mallId, mallName }) {
                 </p>
                 <div className="restaurant-meta">
                   <span className="meta-pill">{r.category || 'Unknown'}</span>
+                  {r.isHalal ? <span className="meta-pill meta-pill-green">Halal &amp; Pork Free</span> : null}
                 </div>
               </div>
 
@@ -142,6 +215,12 @@ export default function Leaderboard({ mallId, mallName }) {
             </li>
           ))}
         </ol>
+      ) : null}
+
+      {!loading && !error && !applied ? (
+        <div className="leaderboard-empty">
+          Choose your categories and tap <strong>Show ranking</strong>.
+        </div>
       ) : null}
     </div>
   );

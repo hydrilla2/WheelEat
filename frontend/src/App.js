@@ -360,6 +360,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
             <Leaderboard
               mallId={mallId}
               mallName={malls.find((m) => m.id === mallId)?.display_name || malls.find((m) => m.id === mallId)?.name}
+              categories={categories}
             />
           </div>
         )}

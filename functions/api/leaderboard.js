@@ -15,7 +15,7 @@ const CACHE_TTL_SECONDS = 300; // 5 minutes
 function toRestaurantObject(row, mallId) {
   // Source of truth is restaurants.js: [Restaurant Name, Unit Number, Floor, Category, Halal Status]
   if (!Array.isArray(row)) return null;
-  const [name, unit, floor, category] = row;
+  const [name, unit, floor, category, isHalal] = row;
   if (!name) return null;
   return {
     name,
@@ -23,6 +23,7 @@ function toRestaurantObject(row, mallId) {
     floor: floor || null,
     category: category || 'Unknown',
     logo: getLogoPath(name, mallId),
+    isHalal: Boolean(isHalal),
   };
 }
 
@@ -330,6 +331,7 @@ export async function onRequest(context) {
           floor: r.floor || null,
           category: r.category || 'Unknown',
           logo: r.logo || null,
+          isHalal: Boolean(r.isHalal),
           rating: null,
           reviews: null,
           google: null,
