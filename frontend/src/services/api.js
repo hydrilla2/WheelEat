@@ -240,8 +240,11 @@ export async function fetchUserVouchers(userId) {
 }
 
 export async function fetchVoucherStocks(merchantNames) {
-  const url = buildUrl('/api/vouchers/stocks', { merchant_names: JSON.stringify(merchantNames || []) });
-  return await fetchJson(url);
+  const url = buildUrl('/api/vouchers/stocks', {
+    merchant_names: JSON.stringify(merchantNames || []),
+    t: Date.now(), // cache buster
+  });
+  return await fetchJson(url, { cache: 'no-store' });
 }
 
 export async function removeUserVoucher({ userId, userVoucherId }) {

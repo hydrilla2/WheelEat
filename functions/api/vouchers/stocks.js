@@ -63,7 +63,11 @@ export async function onRequest(context) {
       };
     }
 
-    return jsonResponse({ stocks });
+    const res = jsonResponse({ stocks });
+    // Prevent any caching (browser, intermediary proxies, Cloudflare edge)
+    res.headers.set('Cache-Control', 'no-store, max-age=0');
+    res.headers.set('Pragma', 'no-cache');
+    return res;
   } catch (e) {
     console.error('Voucher stocks error:', e);
     return jsonResponse({ error: 'Internal server error', message: e.message }, 500);
