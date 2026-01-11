@@ -8,7 +8,7 @@
 
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
 import { getMallInfo, getRestaurantsByMall, getLogoPath } from './lib/restaurants.js';
-import { getPlaceId } from './lib/restaurant-places.js';
+import { getPlaceId, isExplicitlyUnavailable } from './lib/restaurant-places.js';
 
 const CACHE_TTL_SECONDS = 300; // 5 minutes
 
@@ -373,8 +373,13 @@ export async function onRequest(context) {
     // Separate restaurants into two groups: with place_ids and without
     const restaurantsWithPlaceIds = [];
     const restaurantsWithoutPlaceIds = [];
+    const restaurantsExplicitlyUnavailable = [];
     
     for (const r of restaurantsToProcess) {
+      if (isExplicitlyUnavailable(r.name, mallId)) {
+        restaurantsExplicitlyUnavailable.push(r);
+        continue;
+      }
       const placeId = getPlaceId(r.name, mallId);
       if (placeId) {
         restaurantsWithPlaceIds.push(r);
@@ -384,6 +389,9 @@ export async function onRequest(context) {
     }
     
     console.log(`Processing ${restaurantsWithPlaceIds.length} restaurants with place_ids first, then ${restaurantsWithoutPlaceIds.length} without place_ids`);
+    if (restaurantsExplicitlyUnavailable.length > 0) {
+      console.log(`Skipping ${restaurantsExplicitlyUnavailable.length} restaurants explicitly marked as unavailable (no Google Maps link)`);
+    }
     
     // Track errors for debugging
     const errors = [];
@@ -639,11 +647,20 @@ export async function onRequest(context) {
         _debug: { method: 'text_search', found: false, skipped: 'subrequest_limit' },
       }));
     }
+
+    const enrichedExplicitlyUnavailable = restaurantsExplicitlyUnavailable.map(r => ({
+      ...r,
+      rating: null,
+      reviews: null,
+      google: null,
+      _debug: { method: 'none', found: false, skipped: 'explicitly_unavailable' },
+    }));
     
     // Combine results: maintain original order by merging back in the correct sequence
     const enrichedMap = new Map();
     enrichedWithPlaceIds.forEach(r => enrichedMap.set(r.name, r));
     enrichedWithoutPlaceIds.forEach(r => enrichedMap.set(r.name, r));
+    enrichedExplicitlyUnavailable.forEach(r => enrichedMap.set(r.name, r));
     
     // Reconstruct in original order - use restaurantsToProcess (sliced if batching) not the full restaurants array
     const enriched = restaurantsToProcess.map(r => enrichedMap.get(r.name) || {
