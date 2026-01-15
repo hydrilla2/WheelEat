@@ -364,6 +364,23 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
             />
           </div>
         )}
+
+        {activeView === 'wheel' ? (
+          <section className="feedback-section" aria-label="Feedback form">
+            <div className="feedback-header">
+              <h2>Feedback</h2>
+              <p>Help us improve WheelEat. Your feedback takes less than a minute.</p>
+              <a
+                className="feedback-link"
+                href="https://forms.gle/tvibjuqAosBAGNmSA"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open Google Form
+              </a>
+            </div>
+          </section>
+        ) : null}
       </div>
       
       {/* Result Modal - shows after spin completes */}
