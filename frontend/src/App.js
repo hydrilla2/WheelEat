@@ -222,6 +222,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
           setShowVoucherWallet(true);
         } else if (out?.reason === 'sold_out') {
           alert('Sorry, this restaurant voucher is sold out.');
+        } else if (out?.reason === 'already_has_voucher') {
+          alert('You already claimed this voucher.');
         }
       } catch (e) {
         console.debug('Auto-claim voucher failed:', e);
@@ -488,6 +490,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
         setShowVoucherWallet(true);
       } else if (out?.reason === 'sold_out') {
         alert('Sorry, this restaurant voucher is sold out.');
+      } else if (out?.reason === 'already_has_voucher') {
+        alert('You already claimed this voucher.');
       }
     } catch (e) {
       console.debug('Failed to claim voucher:', e);
@@ -830,6 +834,15 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                               type="button"
                               className="voucher-card-cta"
                               onClick={() => {
+                                const leftNow = dynamicLeft !== null ? Number(dynamicLeft) : Number(voucher.left);
+                                if (Number.isFinite(leftNow) && leftNow <= 0) {
+                                  alert('Sorry, there is no voucher left.');
+                                  return;
+                                }
+                                if (!isGuest && vouchers.some((vv) => String(vv.merchant_name) === String(r.name))) {
+                                  alert('You already claimed this voucher.');
+                                  return;
+                                }
                                 const valueRm = Number(String(voucher.value || '').replace(/[^\d]/g, '')) || 5;
                                 const minSpendRm = Number(String(voucher.minSpend || '').replace(/[^\d]/g, '')) || 30;
                                 setPendingVoucher({
@@ -841,7 +854,12 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                                 setShowVoucherOffer(true);
                               }}
                             >
-                              Collect voucher
+                              {(() => {
+                                const leftNow = dynamicLeft !== null ? Number(dynamicLeft) : Number(voucher.left);
+                                if (Number.isFinite(leftNow) && leftNow <= 0) return 'Sold out';
+                                if (!isGuest && vouchers.some((vv) => String(vv.merchant_name) === String(r.name))) return 'Already claimed';
+                                return 'Collect voucher';
+                              })()}
                             </button>
                           </div>
                         ))}
@@ -965,6 +983,16 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                       type="button"
                       className="voucher-card-cta"
                       onClick={() => {
+                        const dynamicLeft = voucherStockByRestaurant?.[featuredDetail.name]?.remaining_qty;
+                        const leftNow = dynamicLeft !== undefined ? Number(dynamicLeft) : Number(voucher.left);
+                        if (Number.isFinite(leftNow) && leftNow <= 0) {
+                          alert('Sorry, there is no voucher left.');
+                          return;
+                        }
+                        if (!isGuest && vouchers.some((vv) => String(vv.merchant_name) === String(featuredDetail.name))) {
+                          alert('You already claimed this voucher.');
+                          return;
+                        }
                         const valueRm = Number(String(voucher.value || '').replace(/[^\d]/g, '')) || 5;
                         const minSpendRm = Number(String(voucher.minSpend || '').replace(/[^\d]/g, '')) || 30;
                         setPendingVoucher({
@@ -976,7 +1004,13 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                         setShowVoucherOffer(true);
                       }}
                     >
-                      Collect voucher
+                      {(() => {
+                        const dynamicLeft = voucherStockByRestaurant?.[featuredDetail.name]?.remaining_qty;
+                        const leftNow = dynamicLeft !== undefined ? Number(dynamicLeft) : Number(voucher.left);
+                        if (Number.isFinite(leftNow) && leftNow <= 0) return 'Sold out';
+                        if (!isGuest && vouchers.some((vv) => String(vv.merchant_name) === String(featuredDetail.name))) return 'Already claimed';
+                        return 'Collect voucher';
+                      })()}
                     </button>
                   </div>
                 ))}
