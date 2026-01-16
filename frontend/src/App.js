@@ -20,6 +20,7 @@ import {
 import Leaderboard from './components/Leaderboard';
 import VoucherOfferModal from './components/VoucherOfferModal';
 import VoucherWalletModal from './components/VoucherWalletModal';
+import AdminVouchers from './components/AdminVouchers';
 import { getPriceRange } from './data/priceRanges';
 import { getGoogleMapsLink } from './data/googleMapsLinks';
 
@@ -50,7 +51,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   const [result, setResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState(null);
-  const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard'
+  const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard' | 'admin'
   const [menuOpen, setMenuOpen] = useState(false);
   const [showRestaurantList, setShowRestaurantList] = useState(false);
   const [spotlightIndex, setSpotlightIndex] = useState(0);
@@ -105,6 +106,10 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
 
   const isGuest = useMemo(() => {
     return !user || user.loginType === 'guest' || String(user?.id || '').startsWith('anon_');
+  }, [user]);
+
+  const isAdmin = useMemo(() => {
+    return user?.loginType === 'google' && String(user?.email || '').toLowerCase() === 'ybtan6666@gmail.com';
   }, [user]);
 
   const refreshVouchers = useCallback(async () => {
@@ -554,6 +559,23 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                     <span className="header-menu-label">Leaderboard</span>
                   </button>
 
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={`header-menu-item ${activeView === 'admin' ? 'active' : ''}`}
+                      onClick={() => {
+                        setActiveView('admin');
+                        setMenuOpen(false);
+                      }}
+                    >
+                      <span className="header-menu-check" aria-hidden="true">
+                        {activeView === 'admin' ? '✓' : ''}
+                      </span>
+                      <span className="header-menu-label">Admin</span>
+                    </button>
+                  ) : null}
+
                   <button
                     type="button"
                     role="menuitem"
@@ -680,7 +702,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
               )}
             </div>
           </div>
-        ) : (
+        ) : activeView === 'leaderboard' ? (
           <div style={{ marginTop: '8px' }}>
             <MallSelector
               value={mallId}
@@ -692,6 +714,10 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
               mallId={mallId}
               mallName={malls.find((m) => m.id === mallId)?.display_name || malls.find((m) => m.id === mallId)?.name}
             />
+          </div>
+        ) : (
+          <div style={{ marginTop: '8px' }}>
+            <AdminVouchers user={user} />
           </div>
         )}
 

@@ -274,4 +274,46 @@ export async function transferVouchers({ guestUserId, googleUserId }) {
   });
 }
 
+// =========================
+// Admin (token protected)
+// =========================
+
+function withAdminAuth(adminToken) {
+  const t = String(adminToken || '').trim();
+  if (!t) throw new Error('Admin token is required');
+  return { Authorization: `Bearer ${t}` };
+}
+
+export async function adminFetchUserVouchers({ adminToken, status, userId, q, limit = 200, offset = 0 }) {
+  const url = buildUrl('/api/admin/vouchers', {
+    status,
+    user_id: userId,
+    q,
+    limit,
+    offset,
+  });
+  return await fetchJson(url, {
+    headers: withAdminAuth(adminToken),
+    cache: 'no-store',
+  });
+}
+
+export async function adminRevokeVoucher({ adminToken, userVoucherId }) {
+  const url = buildUrl('/api/admin/vouchers/revoke');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...withAdminAuth(adminToken) },
+    body: JSON.stringify({ user_voucher_id: userVoucherId }),
+  });
+}
+
+export async function adminDeleteVoucher({ adminToken, userVoucherId }) {
+  const url = buildUrl('/api/admin/vouchers/delete');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...withAdminAuth(adminToken) },
+    body: JSON.stringify({ user_voucher_id: userVoucherId }),
+  });
+}
+
 
