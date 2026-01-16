@@ -275,16 +275,16 @@ export async function transferVouchers({ guestUserId, googleUserId }) {
 }
 
 // =========================
-// Admin (token protected)
+// Admin (Google access token)
 // =========================
 
-function withAdminAuth(adminToken) {
-  const t = String(adminToken || '').trim();
-  if (!t) throw new Error('Admin token is required');
+function withBearer(token) {
+  const t = String(token || '').trim();
+  if (!t) throw new Error('Auth token is required');
   return { Authorization: `Bearer ${t}` };
 }
 
-export async function adminFetchUserVouchers({ adminToken, status, userId, q, limit = 200, offset = 0 }) {
+export async function adminFetchUserVouchers({ accessToken, status, userId, q, limit = 200, offset = 0 }) {
   const url = buildUrl('/api/admin/vouchers', {
     status,
     user_id: userId,
@@ -293,25 +293,25 @@ export async function adminFetchUserVouchers({ adminToken, status, userId, q, li
     offset,
   });
   return await fetchJson(url, {
-    headers: withAdminAuth(adminToken),
+    headers: withBearer(accessToken),
     cache: 'no-store',
   });
 }
 
-export async function adminRevokeVoucher({ adminToken, userVoucherId }) {
+export async function adminRevokeVoucher({ accessToken, userVoucherId }) {
   const url = buildUrl('/api/admin/vouchers/revoke');
   return await fetchJson(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...withAdminAuth(adminToken) },
+    headers: { 'Content-Type': 'application/json', ...withBearer(accessToken) },
     body: JSON.stringify({ user_voucher_id: userVoucherId }),
   });
 }
 
-export async function adminDeleteVoucher({ adminToken, userVoucherId }) {
+export async function adminDeleteVoucher({ accessToken, userVoucherId }) {
   const url = buildUrl('/api/admin/vouchers/delete');
   return await fetchJson(url, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', ...withAdminAuth(adminToken) },
+    headers: { 'Content-Type': 'application/json', ...withBearer(accessToken) },
     body: JSON.stringify({ user_voucher_id: userVoucherId }),
   });
 }

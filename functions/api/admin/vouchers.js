@@ -17,7 +17,7 @@ export async function onRequest(context) {
   if (request.method === 'OPTIONS') return createCORSResponse();
   if (request.method !== 'GET') return jsonResponse({ error: 'Method not allowed' }, 405);
 
-  const authErr = requireAdmin(request, env);
+  const authErr = await requireAdmin(request, env);
   if (authErr) return authErr;
 
   try {

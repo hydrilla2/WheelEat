@@ -16,19 +16,20 @@ export default function AdminVouchers({ user }) {
     return user?.loginType === 'google' && String(user?.email || '').toLowerCase() === 'ybtan6666@gmail.com';
   }, [user]);
 
-  const [adminToken, setAdminToken] = useState('');
   const [status, setStatus] = useState('active');
   const [q, setQ] = useState('');
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
+  const accessToken = user?.accessToken || '';
+
   const refresh = useCallback(async () => {
     setError(null);
     setLoading(true);
     try {
       const out = await adminFetchUserVouchers({
-        adminToken,
+        accessToken,
         status: status || undefined,
         q: q || undefined,
         limit: 200,
@@ -41,24 +42,24 @@ export default function AdminVouchers({ user }) {
     } finally {
       setLoading(false);
     }
-  }, [adminToken, q, status]);
+  }, [accessToken, q, status]);
 
   const revoke = useCallback(
     async (userVoucherId) => {
       if (!window.confirm('Revoke this voucher and RESTOCK +1?')) return;
-      await adminRevokeVoucher({ adminToken, userVoucherId });
+      await adminRevokeVoucher({ accessToken, userVoucherId });
       await refresh();
     },
-    [adminToken, refresh]
+    [accessToken, refresh]
   );
 
   const del = useCallback(
     async (userVoucherId) => {
       if (!window.confirm('DELETE this voucher forever (NO restock)?')) return;
-      await adminDeleteVoucher({ adminToken, userVoucherId });
+      await adminDeleteVoucher({ accessToken, userVoucherId });
       await refresh();
     },
-    [adminToken, refresh]
+    [accessToken, refresh]
   );
 
   if (!isAdmin) {
@@ -75,18 +76,9 @@ export default function AdminVouchers({ user }) {
       <h2 className="admin-title">Admin • Vouchers</h2>
 
       <div className="admin-card">
-        <div className="admin-row">
-          <label className="admin-label">
-            Admin token
-            <input
-              className="admin-input"
-              type="password"
-              value={adminToken}
-              onChange={(e) => setAdminToken(e.target.value)}
-              placeholder="Paste ADMIN_TOKEN here"
-              autoComplete="off"
-            />
-          </label>
+        <div className="admin-muted">
+          Admin is verified server-side using your Google sign-in token.
+          {accessToken ? null : ' (Missing access token — please sign out and sign in again.)'}
         </div>
 
         <div className="admin-row admin-row-2">
