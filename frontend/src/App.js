@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import SpinWheel from './components/SpinWheel';
 import CategorySelector from './components/CategorySelector';
@@ -6,10 +6,24 @@ import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 import Login from './components/Login';
-import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
+import {
+  fetchMalls,
+  fetchCategories,
+  fetchRestaurants,
+  spinWheel,
+  trackPageView,
+  claimRestaurantVoucher,
+  fetchUserVouchers,
+  fetchVoucherStocks,
+  removeUserVoucher,
+  markVoucherUsed,
+  transferVouchers,
+} from './services/api';
 import Leaderboard from './components/Leaderboard';
-import { useSessionTracker } from './hooks/useSessionTracker';
-import { getEffectiveUserId } from './utils/userId';
+import VoucherOfferModal from './components/VoucherOfferModal';
+import VoucherWalletModal from './components/VoucherWalletModal';
+import { getPriceRange } from './data/priceRanges';
+import { getGoogleMapsLink } from './data/googleMapsLinks';
 
 function MenuIcon() {
   return (
@@ -25,7 +39,7 @@ function MenuIcon() {
 /**
  * Main App Component (WheelEat functionality)
  */
-function WheelEatApp({ user, onLogout, onShowLogin }) {
+function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPendingVoucherClaim }) {
   const [mallId, setMallId] = useState('sunway_square');
   const [malls, setMalls] = useState([]);
   const [mallsLoading, setMallsLoading] = useState(true);
@@ -33,16 +47,114 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categories, setCategories] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
+  const [allRestaurants, setAllRestaurants] = useState([]);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState(null);
   const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard'
   const [menuOpen, setMenuOpen] = useState(false);
+  const [showRestaurantList, setShowRestaurantList] = useState(false);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [spotlightList, setSpotlightList] = useState([]);
+  const [showFeaturedDetail, setShowFeaturedDetail] = useState(false);
+  const [featuredDetail, setFeaturedDetail] = useState(null);
   const menuButtonRef = useRef(null);
   const menuRef = useRef(null);
+  const [vouchers, setVouchers] = useState([]);
+  const [showVoucherWallet, setShowVoucherWallet] = useState(false);
+  const [showVoucherOffer, setShowVoucherOffer] = useState(false);
+  const [pendingVoucher, setPendingVoucher] = useState(null);
+  const [voucherStockByRestaurant, setVoucherStockByRestaurant] = useState({});
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
+
+  const promoMenuItems = useMemo(
+    () => [
+      { name: 'Signature Noodles', price: 'RM 18.90' },
+      { name: 'Spicy Mala Bowl', price: 'RM 22.90' },
+      { name: 'Soup Dumplings', price: 'RM 16.50' },
+      { name: 'Crispy Wontons', price: 'RM 12.90' },
+      { name: 'Iced Tea', price: 'RM 6.90' },
+    ],
+    []
+  );
+
+  const promoVouchers = useMemo(
+    () => [
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 5 },
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Far Coffee', left: 5 },
+    ],
+    []
+  );
+
+  function getOrCreateAnonUserId() {
+    try {
+      const key = 'wheeleat_anon_user_id';
+      const existing = localStorage.getItem(key);
+      if (existing) return existing;
+      const created = `anon_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+      localStorage.setItem(key, created);
+      return created;
+    } catch {
+      return `anon_${Math.random().toString(16).slice(2)}_${Date.now()}`;
+    }
+  }
+
+  const effectiveUserId = useMemo(() => {
+    return user?.id ? String(user.id) : getOrCreateAnonUserId();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  const isGuest = useMemo(() => {
+    return !user || user.loginType === 'guest' || String(user?.id || '').startsWith('anon_');
+  }, [user]);
+
+  const refreshVouchers = useCallback(async () => {
+    try {
+      const data = await fetchUserVouchers(effectiveUserId);
+      const active = Array.isArray(data?.vouchers)
+        ? data.vouchers
+            .filter((v) => v.status === 'active')
+            .map((v) => ({ ...v, logo: v.merchant_logo || v.logo || null }))
+        : [];
+      setVouchers(active);
+    } catch (e) {
+      console.debug('Failed to load vouchers:', e);
+      setVouchers([]);
+    }
+  }, [effectiveUserId]);
+
+  const refreshVoucherStocks = useCallback(
+    async (merchantNames) => {
+      try {
+        const names = Array.isArray(merchantNames) ? merchantNames.filter(Boolean) : [];
+        if (names.length === 0) return;
+        const data = await fetchVoucherStocks(names);
+        const stocks = data?.stocks || {};
+        setVoucherStockByRestaurant((prev) => ({ ...prev, ...stocks }));
+      } catch (e) {
+        console.debug('Failed to load voucher stocks:', e);
+      }
+    },
+    []
+  );
+
+  // Load voucher stock counts when Restaurant-of-the-day UI is opened.
+  useEffect(() => {
+    if (!showRestaurantList) return;
+    refreshVoucherStocks(spotlightList.map((r) => r?.name));
+  }, [showRestaurantList, spotlightList, refreshVoucherStocks]);
+
+  useEffect(() => {
+    if (!showFeaturedDetail || !featuredDetail?.name) return;
+    refreshVoucherStocks([featuredDetail.name]);
+  }, [showFeaturedDetail, featuredDetail, refreshVoucherStocks]);
+
+  // Load vouchers for the current user (or anon user) on mount and when user changes.
+  useEffect(() => {
+    refreshVouchers();
+  }, [refreshVouchers]);
 
   // Close header menu on outside click / escape
   useEffect(() => {
@@ -68,6 +180,50 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       document.removeEventListener('keydown', onKeyDown);
     };
   }, [menuOpen]);
+
+  // IMPORTANT: Voucher claiming is ONLY available via "Restaurant of the day" → "Collect voucher".
+  // Spinning the wheel should NOT open voucher popups.
+
+  // Auto-claim after login (pendingVoucherClaim is stored in App so it survives unmount when showing Login).
+  useEffect(() => {
+    if (!pendingVoucherClaim) return;
+    if (isGuest) return;
+    const merchantName = pendingVoucherClaim?.merchant_name;
+    if (!merchantName) return;
+    const merchantLogo = pendingVoucherClaim?.merchant_logo || null;
+    const valueRm = pendingVoucherClaim?.value_rm;
+    const minSpendRm = pendingVoucherClaim?.min_spend_rm;
+
+    (async () => {
+      try {
+        const out = await claimRestaurantVoucher({
+          userId: effectiveUserId,
+          merchantName,
+          merchantLogo,
+          valueRm,
+          minSpendRm,
+        });
+        if (out?.won) {
+          await refreshVouchers();
+          if (out?.remainingQty !== undefined) {
+            setVoucherStockByRestaurant((prev) => ({
+              ...prev,
+              [merchantName]: { ...(prev?.[merchantName] || {}), remaining_qty: Number(out.remainingQty) },
+            }));
+          } else {
+            refreshVoucherStocks([merchantName]);
+          }
+          setShowVoucherWallet(true);
+        } else if (out?.reason === 'sold_out') {
+          alert('Sorry, this restaurant voucher is sold out.');
+        }
+      } catch (e) {
+        console.debug('Auto-claim voucher failed:', e);
+      } finally {
+        setPendingVoucherClaim?.(null);
+      }
+    })();
+  }, [pendingVoucherClaim, isGuest, effectiveUserId, refreshVouchers, refreshVoucherStocks, setPendingVoucherClaim]);
 
   // Result "ring" sound (frontend/public/sounds/ring.mp3 -> /sounds/ring.mp3)
   useEffect(() => {
@@ -163,35 +319,76 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     }
   }, [mallId]);
 
+  // Load full restaurant list for spotlight (not filtered by category or dietary)
+  useEffect(() => {
+    if (!mallId || categories.length === 0) {
+      setAllRestaurants([]);
+      return;
+    }
+
+    fetchRestaurants({ categories, mallId, dietaryNeed: 'any' })
+      .then((data) => setAllRestaurants(data.restaurants || []))
+      .catch((err) => {
+        console.error('Failed to load spotlight restaurants:', err);
+        setAllRestaurants([]);
+      });
+  }, [mallId, categories]);
+
+  // Build a small rotating spotlight list
+  useEffect(() => {
+    if (!allRestaurants.length) {
+      setSpotlightList([]);
+      setSpotlightIndex(0);
+      return;
+    }
+
+    const featuredPrimary = allRestaurants.find((r) => r.name === 'Ba Shu Jia Yan');
+    const featuredSecondary = allRestaurants.find((r) => r.name === 'Far Coffee');
+    const copy = [featuredPrimary, featuredSecondary].filter(Boolean);
+    if (copy.length === 0) {
+      copy.push(...allRestaurants);
+    }
+    for (let i = copy.length - 1; i > 0; i -= 1) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [copy[i], copy[j]] = [copy[j], copy[i]];
+    }
+    setSpotlightList(copy.slice(0, Math.min(2, copy.length)));
+    setSpotlightIndex(0);
+  }, [allRestaurants, mallId]);
+
+  // Rotate spotlight every few seconds
+  useEffect(() => {
+    if (spotlightList.length <= 1) return undefined;
+
+    const interval = setInterval(() => {
+      setSpotlightIndex((prev) => (prev + 1) % spotlightList.length);
+    }, 4000);
+
+    return () => clearInterval(interval);
+  }, [spotlightList]);
+
   // Load restaurants when categories or mall changes
   useEffect(() => {
-    if (mallId) {
-      // If no categories selected, fetch all categories first
-      const categoriesToFetch = selectedCategories.length > 0 ? selectedCategories : categories;
-      if (categoriesToFetch.length > 0) {
-        fetchRestaurants({ categories: categoriesToFetch, mallId, dietaryNeed })
-          .then((data) => setRestaurants(data.restaurants))
-          .catch((err) => {
-            console.error('Failed to load restaurants:', err);
-            setRestaurants([]);
-          });
-      }
+    if (selectedCategories.length > 0 && mallId) {
+      fetchRestaurants({ categories: selectedCategories, mallId, dietaryNeed })
+        .then((data) => setRestaurants(data.restaurants))
+        .catch((err) => {
+          console.error('Failed to load restaurants:', err);
+          setRestaurants([]);
+        });
     } else {
       setRestaurants([]);
     }
-  }, [selectedCategories, mallId, dietaryNeed, categories]);
+  }, [selectedCategories, mallId, dietaryNeed]);
 
   const handleSpin = async () => {
-    // If no categories selected, use all categories
-    const categoriesToUse = selectedCategories.length > 0 ? selectedCategories : categories;
-    
-    if (categoriesToUse.length === 0) {
-      setError('No restaurant categories available');
+    if (selectedCategories.length === 0) {
+      setError('Please select at least one restaurant category');
       return;
     }
 
     if (restaurants.length === 0) {
-      setError('No restaurants found');
+      setError('No restaurants found in selected categories');
       return;
     }
 
@@ -204,7 +401,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
 
     // Get the result immediately (while spinning) but don't show it yet
     try {
-      const data = await spinWheel({ selectedCategories: categoriesToUse, mallId, dietaryNeed });
+      const data = await spinWheel({ selectedCategories, mallId, dietaryNeed });
       // Set result for wheel calculation, but don't show modal yet
       setResult(data);
       
@@ -225,6 +422,95 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const handleCloseResult = () => {
     setShowResult(false);
     setResult(null);
+    setShowVoucherOffer(false);
+    setPendingVoucher(null);
+  };
+
+  const handleKeepVoucher = async () => {
+    if (isGuest) {
+      const merchantName = pendingVoucher?.merchant_name;
+      if (merchantName) {
+        setPendingVoucherClaim?.({
+          merchant_name: merchantName,
+          merchant_logo: pendingVoucher?.merchant_logo || pendingVoucher?.logo || null,
+          value_rm: pendingVoucher?.value_rm,
+          min_spend_rm: pendingVoucher?.min_spend_rm,
+        });
+      }
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      onShowLogin();
+      alert('Please sign in with Google to claim this voucher.');
+      return;
+    }
+
+    const merchantName = pendingVoucher?.merchant_name;
+    if (!merchantName) {
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      return;
+    }
+    const merchantLogo = pendingVoucher?.merchant_logo || pendingVoucher?.logo || null;
+    const valueRm = pendingVoucher?.value_rm;
+    const minSpendRm = pendingVoucher?.min_spend_rm;
+
+    try {
+      const out = await claimRestaurantVoucher({
+        userId: effectiveUserId,
+        merchantName,
+        merchantLogo,
+        valueRm,
+        minSpendRm,
+      });
+      if (out?.won) {
+        await refreshVouchers();
+        if (out?.remainingQty !== undefined) {
+          setVoucherStockByRestaurant((prev) => ({
+            ...prev,
+            [merchantName]: { ...(prev?.[merchantName] || {}), remaining_qty: Number(out.remainingQty) },
+          }));
+        } else {
+          refreshVoucherStocks([merchantName]);
+        }
+        setShowVoucherWallet(true);
+      } else if (out?.reason === 'sold_out') {
+        alert('Sorry, this restaurant voucher is sold out.');
+      }
+    } catch (e) {
+      console.debug('Failed to claim voucher:', e);
+    } finally {
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+    }
+  };
+
+  const handleDeclineVoucher = async () => {
+    setShowVoucherOffer(false);
+    setPendingVoucher(null);
+  };
+
+  const handleRemoveVoucher = async (userVoucherId) => {
+    await removeUserVoucher({ userId: effectiveUserId, userVoucherId });
+    await refreshVouchers();
+    // Removal restocks +1 in backend; refresh stocks for the featured restaurants
+    refreshVoucherStocks(spotlightList.map((r) => r?.name));
+  };
+
+  const handleUseVoucher = async (userVoucherId) => {
+    await markVoucherUsed({ userId: effectiveUserId, userVoucherId });
+    await refreshVouchers();
+  };
+
+  const handleClearVouchers = async () => {
+    // Release all active vouchers back to inventory (demo behavior).
+    for (const v of vouchers) {
+      try {
+        await removeUserVoucher({ userId: effectiveUserId, userVoucherId: v.id });
+      } catch (e) {
+        console.debug('Failed to remove voucher during clear:', e);
+      }
+    }
+    await refreshVouchers();
   };
 
   return (
@@ -247,6 +533,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 <span className="header-menu-icon" aria-hidden="true">
                   <MenuIcon />
                 </span>
+                {vouchers.length > 0 ? <span className="header-menu-dot" aria-label="You have vouchers" /> : null}
               </button>
 
               {menuOpen ? (
@@ -285,6 +572,20 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                     <span className="header-menu-label">Leaderboard</span>
                   </button>
 
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="header-menu-item"
+                    onClick={() => {
+                      setShowVoucherWallet(true);
+                      setMenuOpen(false);
+                    }}
+                  >
+                    <span className="header-menu-check" aria-hidden="true" />
+                    <span className="header-menu-label">Vouchers</span>
+                    {vouchers.length > 0 ? <span className="header-menu-badge">{vouchers.length}</span> : null}
+                  </button>
+
                   <div className="header-menu-divider" role="separator" />
 
                   <button
@@ -315,6 +616,53 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 malls={malls}
                 loading={mallsLoading}
               />
+              <div className="spotlight-panel">
+                <div className="spotlight-header">
+                  <span className="spotlight-title">Restaurant of the day</span>
+                  <button
+                    type="button"
+                    className="spotlight-viewall"
+                    onClick={() => setShowRestaurantList(true)}
+                  >
+                    View all
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="spotlight-card"
+                  onClick={() => setShowRestaurantList(true)}
+                  aria-label="Open featured restaurants"
+                >
+                  {spotlightList.length > 0 ? (
+                    <div className="spotlight-content">
+                      <div className="spotlight-logo">
+                        {spotlightList[spotlightIndex]?.logo ? (
+                          <img
+                            src={`/${spotlightList[spotlightIndex]?.logo}`}
+                            alt={spotlightList[spotlightIndex]?.name}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="spotlight-details">
+                        <div className="spotlight-name">
+                          {spotlightList[spotlightIndex]?.name}
+                        </div>
+                        <div className="spotlight-meta">
+                          {spotlightList[spotlightIndex]?.category || 'Category'}
+                          {spotlightList[spotlightIndex]?.unit
+                            ? ` | ${spotlightList[spotlightIndex]?.unit}`
+                            : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="spotlight-empty">Loading restaurants...</div>
+                  )}
+                </button>
+              </div>
               <DietarySelector
                 value={dietaryNeed}
                 onChange={setDietaryNeed}
@@ -337,7 +685,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               <button
                 className="spin-button"
                 onClick={handleSpin}
-                disabled={spinning || restaurants.length === 0}
+                disabled={spinning || selectedCategories.length === 0 || restaurants.length === 0}
               >
                 {spinning ? 'Spinning...' : '🎰 Spin the Wheel!'}
               </button>
@@ -360,27 +708,9 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
             <Leaderboard
               mallId={mallId}
               mallName={malls.find((m) => m.id === mallId)?.display_name || malls.find((m) => m.id === mallId)?.name}
-              categories={categories}
             />
           </div>
         )}
-
-        {activeView === 'wheel' ? (
-          <section className="feedback-section" aria-label="Feedback form">
-            <div className="feedback-header">
-              <h2>Feedback</h2>
-              <p>Help us improve WheelEat. Your feedback takes less than a minute.</p>
-              <a
-                className="feedback-link"
-                href="https://forms.gle/tvibjuqAosBAGNmSA"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Open Google Form
-              </a>
-            </div>
-          </section>
-        ) : null}
       </div>
       
       {/* Result Modal - shows after spin completes */}
@@ -391,6 +721,261 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
           onSpinAgain={handleSpin}
         />
       )}
+
+      {showRestaurantList ? (
+        <div
+          className="restaurant-list-overlay"
+          onClick={() => setShowRestaurantList(false)}
+          role="presentation"
+        >
+          <div
+            className="restaurant-list-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="restaurant-list-close"
+              onClick={() => setShowRestaurantList(false)}
+              aria-label="Close restaurant list"
+            >
+              X
+            </button>
+            <h2>Restaurant of the day</h2>
+            <div className="restaurant-list-count">
+              {spotlightList.length} total
+            </div>
+            <div className="restaurant-list-scroll">
+              {spotlightList.map((r) => {
+                const vouchersForRestaurant = promoVouchers.filter(
+                  (voucher) => voucher.restaurant === r.name
+                );
+                const dynamicLeft =
+                  voucherStockByRestaurant?.[r.name]?.remaining_qty !== undefined
+                    ? voucherStockByRestaurant[r.name].remaining_qty
+                    : null;
+                return (
+                  <div key={r.name} className="featured-bundle">
+                    <button
+                      type="button"
+                      className="restaurant-list-row"
+                      onClick={() => {
+                        setFeaturedDetail(r);
+                        setShowFeaturedDetail(true);
+                      }}
+                    >
+                      <div className="restaurant-list-logo">
+                        {r.logo ? (
+                          <img
+                            src={`/${r.logo}`}
+                            alt={r.name}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="restaurant-list-details">
+                        <div className="restaurant-list-name">{r.name}</div>
+                        <div className="restaurant-list-meta">
+                          {r.category || 'Category'}
+                          {r.unit ? ` | ${r.unit}` : ''}
+                          {r.floor ? ` | ${r.floor}` : ''}
+                        </div>
+                      </div>
+                    </button>
+                    {vouchersForRestaurant.length > 0 ? (
+                      <div className="voucher-card-grid">
+                        {vouchersForRestaurant.map((voucher, index) => (
+                          <div key={`${r.name}-voucher-${index}`} className="voucher-card">
+                            <div className="voucher-card-value">{voucher.value}</div>
+                            <div className="voucher-card-info">
+                            <div className="voucher-card-min">
+                              {voucher.minSpend} in {voucher.restaurant}
+                            </div>
+                              <div className="voucher-card-left">
+                                {(dynamicLeft !== null ? dynamicLeft : voucher.left)} vouchers left
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="voucher-card-cta"
+                              onClick={() => {
+                                const valueRm = Number(String(voucher.value || '').replace(/[^\d]/g, '')) || 5;
+                                const minSpendRm = Number(String(voucher.minSpend || '').replace(/[^\d]/g, '')) || 30;
+                                setPendingVoucher({
+                                  merchant_name: r.name,
+                                  merchant_logo: r.logo || null,
+                                  value_rm: valueRm,
+                                  min_spend_rm: minSpendRm,
+                                });
+                                setShowVoucherOffer(true);
+                              }}
+                            >
+                              Collect voucher
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showFeaturedDetail && featuredDetail ? (
+        <div
+          className="restaurant-detail-overlay"
+          onClick={() => setShowFeaturedDetail(false)}
+          role="presentation"
+        >
+          <div
+            className="restaurant-detail-modal"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="restaurant-detail-close"
+              onClick={() => setShowFeaturedDetail(false)}
+              aria-label="Close restaurant details"
+            >
+              X
+            </button>
+            <div className="restaurant-detail-logo">
+              {featuredDetail.logo ? (
+                <img
+                  src={`/${featuredDetail.logo}`}
+                  alt={featuredDetail.name}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : null}
+            </div>
+            <div className="restaurant-detail-title">You got:</div>
+            <h3>{featuredDetail.name}</h3>
+            <div className="restaurant-detail-info">
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Price range:</span>
+                <span className="restaurant-detail-value">
+                  {getPriceRange(featuredDetail.name)}
+                </span>
+              </div>
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Visit Instagram:</span>
+                {featuredDetail.name === 'Ba Shu Jia Yan' ? (
+                  <a
+                    className="restaurant-detail-link"
+                    href="https://www.instagram.com/bashujiayansunway/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Instagram
+                  </a>
+                ) : (
+                  <button type="button" className="restaurant-detail-link" disabled>
+                    Open Instagram
+                  </button>
+                )}
+              </div>
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Give me a review:</span>
+                {getGoogleMapsLink(featuredDetail.name) ? (
+                  <a
+                    className="restaurant-detail-link"
+                    href={getGoogleMapsLink(featuredDetail.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Google Maps
+                  </a>
+                ) : (
+                  <button type="button" className="restaurant-detail-link" disabled>
+                    Open Google Maps
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="restaurant-detail-promo">
+              <div className="restaurant-detail-promo-title">Promotion menu</div>
+              <div className="restaurant-detail-promo-track">
+                {promoMenuItems.map((item, index) => (
+                  <div key={`${item.name}-${index}`} className="promo-card">
+                    <div className="promo-card-image" aria-hidden="true">
+                      <div className="promo-card-icon">Meal</div>
+                    </div>
+                    <div className="promo-card-name">{item.name}</div>
+                    <div className="promo-card-price">{item.price}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+            <div className="restaurant-detail-vouchers">
+              <div className="restaurant-detail-promo-title">Collect voucher</div>
+              <div className="voucher-card-grid">
+                {promoVouchers
+                  .filter((voucher) => voucher.restaurant === featuredDetail.name)
+                  .map((voucher, index) => (
+                  <div key={`voucher-${index}`} className="voucher-card">
+                    <div className="voucher-card-value">{voucher.value}</div>
+                    <div className="voucher-card-info">
+                      <div className="voucher-card-min">
+                        {voucher.minSpend} in {voucher.restaurant}
+                      </div>
+                      <div className="voucher-card-left">
+                        {(voucherStockByRestaurant?.[featuredDetail.name]?.remaining_qty !== undefined
+                          ? voucherStockByRestaurant[featuredDetail.name].remaining_qty
+                          : voucher.left)}{' '}
+                        vouchers left
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="voucher-card-cta"
+                      onClick={() => {
+                        const valueRm = Number(String(voucher.value || '').replace(/[^\d]/g, '')) || 5;
+                        const minSpendRm = Number(String(voucher.minSpend || '').replace(/[^\d]/g, '')) || 30;
+                        setPendingVoucher({
+                          merchant_name: featuredDetail.name,
+                          merchant_logo: featuredDetail.logo || null,
+                          value_rm: valueRm,
+                          min_spend_rm: minSpendRm,
+                        });
+                        setShowVoucherOffer(true);
+                      }}
+                    >
+                      Collect voucher
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {/* Voucher offer */}
+      {showVoucherOffer ? (
+        <VoucherOfferModal
+          voucher={pendingVoucher}
+          onAccept={handleKeepVoucher}
+          onDecline={handleDeclineVoucher}
+          user={user}
+        />
+      ) : null}
+
+      {/* Voucher wallet */}
+      {showVoucherWallet ? (
+        <VoucherWalletModal
+          vouchers={vouchers}
+          onClose={() => setShowVoucherWallet(false)}
+          onRemove={handleRemoveVoucher}
+          onUse={handleUseVoucher}
+          onClear={handleClearVouchers}
+        />
+      ) : null}
     </div>
   );
 }
@@ -399,10 +984,8 @@ function App() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [showLogin, setShowLogin] = useState(false);
-
-  // Track user session time (always use a user ID - either Google or anonymous)
-  const userId = getEffectiveUserId(user);
-  useSessionTracker(userId);
+  // When a guest taps "Claim", we store the intended voucher here so after Google login we can auto-claim it.
+  const [pendingVoucherClaim, setPendingVoucherClaim] = useState(null);
 
   // Check if user is already logged in (on page load)
   useEffect(() => {
@@ -444,27 +1027,83 @@ function App() {
     setLoading(false);
     console.log('===============================');
 
-    // Track page view (use effective user ID - Google or anonymous)
+    // Track page view
     let userId = null;
     if (savedUser) {
       try {
         const userData = JSON.parse(savedUser);
-        userId = getEffectiveUserId(userData);
+        userId = userData.id || null;
       } catch (e) {
-        // If parse fails, use anonymous ID
-        userId = getEffectiveUserId(null);
+        // Ignore parse errors
       }
-    } else {
-      // No saved user - use anonymous ID
-      userId = getEffectiveUserId(null);
     }
     trackPageView(window.location.pathname, userId);
   }, []);
 
   // Handle login success
-  const handleLogin = (userData) => {
+  const handleLogin = async (userData, previousUserIdFromLogin = null) => {
     console.log('=== handleLogin called ===');
     console.log('User data received:', userData);
+    console.log('Previous user ID (from Login component):', previousUserIdFromLogin);
+
+    // Determine guest ID that may hold vouchers:
+    // 1) Prefer explicit previousUserId from Login (guest_)
+    // 2) Fallback to anon ID used by wheel when spinning without login
+    let guestUserIdForTransfer = previousUserIdFromLogin;
+    if (!guestUserIdForTransfer) {
+      try {
+        const anonId = localStorage.getItem('wheeleat_anon_user_id');
+        if (anonId) {
+          guestUserIdForTransfer = anonId;
+          console.log('Using anon user ID for voucher transfer:', anonId);
+        }
+      } catch (e) {
+        console.debug('Could not read anon user id:', e);
+      }
+    }
+
+    let isGuestSource = false;
+    if (guestUserIdForTransfer) {
+      isGuestSource =
+        String(guestUserIdForTransfer).startsWith('anon_') ||
+        String(guestUserIdForTransfer).startsWith('guest_');
+    }
+    console.log('Guest source for transfer:', {
+      guestUserIdForTransfer,
+      isGuestSource,
+    });
+
+    // If previous user was a guest/anon and new user is Google, transfer vouchers
+    if (isGuestSource && guestUserIdForTransfer && userData && userData.loginType !== 'guest') {
+      try {
+        console.log('Transferring vouchers from guest/anon to Google account...', {
+          guestUserId: guestUserIdForTransfer,
+          googleUserId: userData.id,
+        });
+        const result = await transferVouchers({
+          guestUserId: guestUserIdForTransfer,
+          googleUserId: userData.id,
+        });
+        console.log('Voucher transfer result:', result);
+        if (result.transferred > 0) {
+          console.log(`Successfully transferred ${result.transferred} voucher(s) to Google account`);
+        } else {
+          console.log('No vouchers were transferred (may already exist or none found)');
+        }
+      } catch (e) {
+        console.error('Failed to transfer vouchers:', e);
+        console.error('Transfer error details:', e.message, e.stack);
+        // Continue with login even if transfer fails
+      }
+    } else {
+      console.log('Skipping transfer:', {
+        isGuestSource,
+        guestUserIdForTransfer,
+        hasUserData: !!userData,
+        userLoginType: userData?.loginType,
+      });
+    }
+
     setUser(userData);
     setShowLogin(false);
     console.log('User state updated');
@@ -474,6 +1113,7 @@ function App() {
   const handleLogout = () => {
     localStorage.removeItem('wheeleat_user');
     setUser(null);
+    setPendingVoucherClaim(null);
   };
 
   // Show loading state briefly
@@ -502,6 +1142,8 @@ function App() {
       user={user}
       onLogout={handleLogout}
       onShowLogin={() => setShowLogin(true)}
+      pendingVoucherClaim={pendingVoucherClaim}
+      setPendingVoucherClaim={setPendingVoucherClaim}
     />
   );
 }

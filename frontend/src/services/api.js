@@ -94,25 +94,6 @@ export async function upsertUser({ id, name, email }) {
   });
 }
 
-// Register anonymous user in Cloudflare D1 database
-export async function registerAnonymousUser(anonId) {
-  try {
-    const url = buildUrl('/api/users');
-    await fetchJson(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        id: anonId,
-        name: 'Guest User',
-        // email is omitted for anonymous users
-      }),
-    });
-  } catch (error) {
-    // Silently fail - don't interrupt user experience
-    console.debug('Anonymous user registration failed:', error);
-  }
-}
-
 // Leaderboard
 const LEADERBOARD_TTL_MS = 2 * 60 * 1000; // 2 minutes (frontend-side)
 
@@ -234,66 +215,63 @@ export async function getPageViewStats() {
   return await fetchJson(url);
 }
 
-// Session tracking functions
-export async function startSession(userId = null) {
-  try {
-    const url = buildUrl('/api/user-sessions');
-    const response = await fetchJson(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'start',
-        user_id: userId,
-        user_agent: navigator.userAgent,
-        referer: document.referrer,
-      }),
-    });
-    return response.session_id;
-  } catch (error) {
-    console.debug('Session start failed:', error);
-    return null;
-  }
+// =========================
+// Voucher System (per restaurant)
+// =========================
+
+export async function claimRestaurantVoucher({ userId, merchantName, merchantLogo, valueRm, minSpendRm }) {
+  const url = buildUrl('/api/vouchers/spin');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      merchant_name: merchantName,
+      merchant_logo: merchantLogo,
+      value_rm: valueRm,
+      min_spend_rm: minSpendRm,
+    }),
+  });
 }
 
-export async function sendHeartbeat(sessionId, userId = null) {
-  if (!sessionId) return;
-  try {
-    const url = buildUrl('/api/user-sessions');
-    await fetchJson(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'heartbeat',
-        session_id: sessionId,
-        user_id: userId,
-      }),
-    });
-  } catch (error) {
-    console.debug('Session heartbeat failed:', error);
-  }
-}
-
-export async function endSession(sessionId) {
-  if (!sessionId) return;
-  try {
-    const url = buildUrl('/api/user-sessions');
-    await fetchJson(url, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'end',
-        session_id: sessionId,
-      }),
-    });
-  } catch (error) {
-    console.debug('Session end failed:', error);
-  }
-}
-
-// Get session statistics
-export async function getSessionStats() {
-  const url = buildUrl('/api/user-sessions');
+export async function fetchUserVouchers(userId) {
+  const url = buildUrl('/api/vouchers', { user_id: userId });
   return await fetchJson(url);
+}
+
+export async function fetchVoucherStocks(merchantNames) {
+  const url = buildUrl('/api/vouchers/stocks', {
+    merchant_names: JSON.stringify(merchantNames || []),
+    t: Date.now(), // cache buster
+  });
+  return await fetchJson(url, { cache: 'no-store' });
+}
+
+export async function removeUserVoucher({ userId, userVoucherId }) {
+  const url = buildUrl('/api/vouchers/remove');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, user_voucher_id: userVoucherId }),
+  });
+}
+
+export async function markVoucherUsed({ userId, userVoucherId }) {
+  const url = buildUrl('/api/vouchers/use');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, user_voucher_id: userVoucherId }),
+  });
+}
+
+export async function transferVouchers({ guestUserId, googleUserId }) {
+  const url = buildUrl('/api/vouchers/transfer');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ guest_user_id: guestUserId, google_user_id: googleUserId }),
+  });
 }
 
 

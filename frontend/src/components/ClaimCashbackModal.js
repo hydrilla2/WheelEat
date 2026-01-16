@@ -6,7 +6,9 @@ export const WHATSAPP_CLAIM_LINK = 'https://wa.link/oullbd';
 export default function ClaimCashbackModal({ voucher, onClose }) {
   if (!voucher) return null;
 
-  const logoPath = voucher.logo ? `/${voucher.logo}` : null;
+  const logoPath = (voucher.merchant_logo || voucher.logo) ? `/${voucher.merchant_logo || voucher.logo}` : null;
+  const merchantName = voucher.merchant_name || 'Far Coffee';
+  const code = `WE-${String(voucher.id || '').slice(-6).toUpperCase()}`;
 
   return (
     <div className="claim-overlay" onClick={onClose}>
@@ -26,7 +28,7 @@ export default function ClaimCashbackModal({ voucher, onClose }) {
           {logoPath ? (
             <img
               src={logoPath}
-              alt={voucher.restaurantName}
+              alt={merchantName}
               className="claim-logo"
               onError={(e) => {
                 e.target.style.display = 'none';
@@ -34,8 +36,8 @@ export default function ClaimCashbackModal({ voucher, onClose }) {
             />
           ) : null}
           <div className="claim-voucherInfo">
-            <div className="claim-voucherName">{voucher.restaurantName}</div>
-            <div className="claim-voucherCode">{voucher.code}</div>
+            <div className="claim-voucherName">{merchantName}</div>
+            <div className="claim-voucherCode">{code}</div>
           </div>
         </div>
 

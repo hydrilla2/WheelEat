@@ -5,7 +5,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 1100; /* above ResultModal (1000) */
+  z-index: 2100; /* above restaurant overlays (1500) */
   backdrop-filter: blur(6px);
   animation: voucherFade 0.22s ease-out;
   padding: 14px;
