@@ -35,8 +35,7 @@ export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }
   const minSpendRm = Number(voucher.min_spend_rm);
   const minSpendLabel = Number.isFinite(minSpendRm) ? `Min spend RM${minSpendRm}` : null;
 
-  const code = String(voucher.id || '').slice(-6).toUpperCase();
-  const voucherPreview = code ? `WE-${code}` : 'WE-XXXXXX';
+  const voucherPreview = voucher?.code ? String(voucher.code) : 'Code assigned after you claim';
   const expiryLabel = formatMytExpiry(voucher.expired_at_ms);
 
   // Check if user is a guest (not signed in with Google)

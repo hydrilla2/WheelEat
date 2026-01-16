@@ -51,7 +51,7 @@ export async function onRequest(context) {
 
     const rows = await db
       .prepare(
-        `SELECT
+         `SELECT
            uv.id            AS user_voucher_id,
            uv.user_id       AS user_id,
            u.email          AS user_email,
@@ -60,6 +60,7 @@ export async function onRequest(context) {
            uv.expired_at_ms AS expired_at_ms,
            uv.used_at_ms    AS used_at_ms,
            uv.removed_at_ms AS removed_at_ms,
+           uv.code          AS code,
            v.id             AS voucher_id,
            v.merchant_name  AS merchant_name,
            v.value_rm       AS value_rm,

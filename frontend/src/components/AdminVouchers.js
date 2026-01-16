@@ -111,6 +111,7 @@ export default function AdminVouchers({ user }) {
         <div className="admin-table-head">
           <div>User</div>
           <div>Restaurant</div>
+          <div>Code</div>
           <div>Status</div>
           <div>Issued</div>
           <div>Expires</div>
@@ -126,6 +127,7 @@ export default function AdminVouchers({ user }) {
               </div>
             </div>
             <div>{r.merchant_name || '—'}</div>
+            <div className="admin-mono">{r.code || '—'}</div>
             <div className="admin-badge">{r.status}</div>
             <div className="admin-mono">{formatMs(r.issued_at_ms)}</div>
             <div className="admin-mono">{formatMs(r.expired_at_ms)}</div>

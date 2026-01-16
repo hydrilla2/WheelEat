@@ -75,7 +75,7 @@ export async function expireDueVouchers(env, nowMs = Date.now(), limit = 200) {
 
   const due = await db
     .prepare(
-      `SELECT id, voucher_id
+      `SELECT id, voucher_id, code
        FROM user_vouchers
        WHERE status='active' AND expired_at_ms <= ?
        LIMIT ?`
@@ -96,6 +96,20 @@ export async function expireDueVouchers(env, nowMs = Date.now(), limit = 200) {
            WHERE id=? AND status='active'`
         )
         .bind(nowMs, r.id),
+      // Return fixed code back to pool (only if the voucher actually expired in statement above).
+      db
+        .prepare(
+          `UPDATE voucher_codes
+           SET status='available',
+               assigned_user_voucher_id=NULL,
+               updated_at_ms=?
+           WHERE code=?
+             AND voucher_id=?
+             AND status='assigned'
+             AND assigned_user_voucher_id=?
+             AND changes() = 1`
+        )
+        .bind(nowMs, r.code, r.voucher_id, r.id),
       db
         .prepare(
           `UPDATE vouchers
@@ -147,27 +161,61 @@ export async function claimVoucher(env, { userId, merchantName, merchantLogo = n
   const expiredAtMs = nowMs + DEFAULT_TTL_MS;
   const userVoucherId = generateUUID(); // unique voucher id (per issued voucher)
 
+  // Allocate ONE fixed code from pool (must be pre-seeded).
+  const codeRow = await db
+    .prepare(
+      `SELECT code
+       FROM voucher_codes
+       WHERE voucher_id=? AND status='available'
+       ORDER BY code
+       LIMIT 1`
+    )
+    .bind(voucherId)
+    .first();
+
+  if (!codeRow?.code) {
+    return {
+      won: false,
+      reason: 'sold_out',
+      remainingQty: 0,
+      message: 'No voucher codes available.',
+    };
+  }
+
+  const code = String(codeRow.code);
+
   // Atomic decrement then insert.
   await db.batch([
     db
       .prepare(
+        `UPDATE voucher_codes
+         SET status='assigned',
+             assigned_user_voucher_id=?,
+             updated_at_ms=?
+         WHERE code=?
+           AND voucher_id=?
+           AND status='available'`
+      )
+      .bind(userVoucherId, nowMs, code, voucherId),
+    // Keep vouchers.remaining_qty in sync with code pool (decrement only if assignment succeeded)
+    db
+      .prepare(
         `UPDATE vouchers
-         SET remaining_qty = remaining_qty - 1,
+         SET remaining_qty = MAX(0, remaining_qty - changes()),
              updated_at_ms = ?
-         WHERE id = ?
-           AND remaining_qty > 0`
+         WHERE id = ?`
       )
       .bind(nowMs, voucherId),
     db
       .prepare(
         `INSERT INTO user_vouchers (
-           id, user_id, voucher_id, status, issued_at_ms, expired_at_ms, removed_at_ms, used_at_ms, updated_at_ms
+           id, user_id, voucher_id, code, status, issued_at_ms, expired_at_ms, removed_at_ms, used_at_ms, updated_at_ms
          )
          SELECT
-           ?, ?, ?, 'active', ?, ?, NULL, NULL, ?
+           ?, ?, ?, ?, 'active', ?, ?, NULL, NULL, ?
          WHERE changes() = 1`
       )
-      .bind(userVoucherId, String(userId), voucherId, issuedAtMs, expiredAtMs, nowMs),
+      .bind(userVoucherId, String(userId), voucherId, code, issuedAtMs, expiredAtMs, nowMs),
   ]);
 
   // Check if inserted
@@ -177,6 +225,16 @@ export async function claimVoucher(env, { userId, merchantName, merchantLogo = n
     .first();
 
   if (!uv?.id) {
+    // Release the code if insert failed for any reason.
+    await db
+      .prepare(
+        `UPDATE voucher_codes
+         SET status='available', assigned_user_voucher_id=NULL, updated_at_ms=?
+         WHERE code=? AND voucher_id=? AND assigned_user_voucher_id=? AND status='assigned'`
+      )
+      .bind(nowMs, code, voucherId, userVoucherId)
+      .run();
+
     const left = await db.prepare(`SELECT remaining_qty FROM vouchers WHERE id=?`).bind(voucherId).first();
     return {
       won: false,
@@ -193,6 +251,7 @@ export async function claimVoucher(env, { userId, merchantName, merchantLogo = n
       id: userVoucherId,
       user_id: String(userId),
       voucher_id: voucherId,
+      code,
       merchant_name: String(merchantName),
       merchant_logo: merchantLogo ? String(merchantLogo) : null,
       value_rm: Number(valueRm),
@@ -213,7 +272,7 @@ export async function removeUserVoucher(env, { userId, userVoucherId, nowMs = Da
 
   // Fetch voucher_id for restock
   const row = await db
-    .prepare(`SELECT voucher_id FROM user_vouchers WHERE id=? AND user_id=?`)
+    .prepare(`SELECT voucher_id, code FROM user_vouchers WHERE id=? AND user_id=?`)
     .bind(String(userVoucherId), String(userId))
     .first();
 
@@ -227,6 +286,19 @@ export async function removeUserVoucher(env, { userId, userVoucherId, nowMs = Da
          WHERE id=? AND user_id=? AND status='active'`
       )
       .bind(nowMs, nowMs, String(userVoucherId), String(userId)),
+    db
+      .prepare(
+        `UPDATE voucher_codes
+         SET status='available',
+             assigned_user_voucher_id=NULL,
+             updated_at_ms=?
+         WHERE code=?
+           AND voucher_id=?
+           AND status='assigned'
+           AND assigned_user_voucher_id=?
+           AND changes() = 1`
+      )
+      .bind(nowMs, row.code, row.voucher_id, String(userVoucherId)),
     db
       .prepare(
         `UPDATE vouchers
@@ -249,16 +321,36 @@ export async function useUserVoucher(env, { userId, userVoucherId, nowMs = Date.
   const db = getD1Database(env);
   await expireDueVouchers(env, nowMs);
 
-  const res = await db
-    .prepare(
-      `UPDATE user_vouchers
-       SET status='used', used_at_ms=?, updated_at_ms=?
-       WHERE id=? AND user_id=? AND status='active'`
-    )
-    .bind(nowMs, nowMs, String(userVoucherId), String(userId))
-    .run();
+  const row = await db
+    .prepare(`SELECT voucher_id, code FROM user_vouchers WHERE id=? AND user_id=?`)
+    .bind(String(userVoucherId), String(userId))
+    .first();
+  if (!row?.voucher_id) return { ok: false, used: false };
 
-  return { ok: true, used: Boolean(res?.meta?.changes) };
+  const batchRes = await db.batch([
+    db
+      .prepare(
+        `UPDATE user_vouchers
+         SET status='used', used_at_ms=?, updated_at_ms=?
+         WHERE id=? AND user_id=? AND status='active'`
+      )
+      .bind(nowMs, nowMs, String(userVoucherId), String(userId)),
+    // Consume the fixed code forever (do NOT return to available).
+    db
+      .prepare(
+        `UPDATE voucher_codes
+         SET status='used',
+             updated_at_ms=?
+         WHERE code=?
+           AND voucher_id=?
+           AND assigned_user_voucher_id=?
+           AND status='assigned'
+           AND changes() = 1`
+      )
+      .bind(nowMs, row.code, row.voucher_id, String(userVoucherId)),
+  ]);
+
+  return { ok: true, used: Number(batchRes?.[0]?.meta?.changes || 0) > 0 };
 }
 
 export async function listUserVouchers(env, { userId, nowMs = Date.now() }) {
@@ -268,7 +360,7 @@ export async function listUserVouchers(env, { userId, nowMs = Date.now() }) {
   const res = await db
     .prepare(
       `SELECT uv.id, uv.user_id, uv.voucher_id, uv.status,
-              uv.issued_at_ms, uv.expired_at_ms, uv.removed_at_ms, uv.used_at_ms,
+              uv.code, uv.issued_at_ms, uv.expired_at_ms, uv.removed_at_ms, uv.used_at_ms,
               v.merchant_name, v.merchant_logo, v.value_rm, v.min_spend_rm
        FROM user_vouchers uv
        JOIN vouchers v ON v.id = uv.voucher_id

@@ -41,6 +41,7 @@ CREATE TABLE IF NOT EXISTS user_vouchers (
   id TEXT PRIMARY KEY,                 -- user_voucher_id
   user_id TEXT NOT NULL,
   voucher_id TEXT NOT NULL,
+  code TEXT,                            -- fixed voucher code (e.g. BSJY-001); may be NULL for legacy rows
   status TEXT NOT NULL CHECK (status IN ('active', 'removed', 'expired', 'used')),
   issued_at_ms INTEGER NOT NULL,
   expired_at_ms INTEGER NOT NULL,
@@ -54,5 +55,25 @@ CREATE INDEX IF NOT EXISTS idx_user_vouchers_user ON user_vouchers (user_id);
 CREATE INDEX IF NOT EXISTS idx_user_vouchers_status ON user_vouchers (status);
 CREATE INDEX IF NOT EXISTS idx_user_vouchers_expired_at ON user_vouchers (expired_at_ms);
 CREATE INDEX IF NOT EXISTS idx_user_vouchers_voucher ON user_vouchers (voucher_id);
+
+-- Fixed voucher code pool.
+-- Each voucher type (vouchers.id) can have a set of unique codes.
+-- Codes move between:
+-- - available: can be claimed
+-- - assigned: currently held by an active user_voucher
+-- - used: consumed (never returned)
+-- - disabled: removed forever by admin (never returned)
+CREATE TABLE IF NOT EXISTS voucher_codes (
+  code TEXT PRIMARY KEY,
+  voucher_id TEXT NOT NULL,
+  status TEXT NOT NULL CHECK (status IN ('available', 'assigned', 'used', 'disabled')),
+  assigned_user_voucher_id TEXT,
+  created_at_ms INTEGER NOT NULL,
+  updated_at_ms INTEGER NOT NULL,
+  FOREIGN KEY (voucher_id) REFERENCES vouchers(id)
+);
+
+CREATE INDEX IF NOT EXISTS idx_voucher_codes_voucher ON voucher_codes(voucher_id);
+CREATE INDEX IF NOT EXISTS idx_voucher_codes_status ON voucher_codes(status);
 
 

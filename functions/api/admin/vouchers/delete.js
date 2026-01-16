@@ -29,12 +29,32 @@ export async function onRequest(context) {
     if (!env.DB) return jsonResponse({ error: 'Database not configured' }, 500);
     const db = getD1Database(env);
 
-    const res = await db
-      .prepare(`DELETE FROM user_vouchers WHERE id=?`)
+    const row = await db
+      .prepare(`SELECT voucher_id, code FROM user_vouchers WHERE id=?`)
       .bind(String(userVoucherId))
-      .run();
+      .first();
+    if (!row?.voucher_id) return jsonResponse({ ok: false, message: 'Voucher not found' }, 404);
 
-    const deleted = Number(res?.meta?.changes || 0) > 0;
+    // Delete forever:
+    // - If this voucher holds a fixed code, disable the code so it can never be re-issued.
+    // - Then delete the user_voucher row.
+    const batchRes = await db.batch([
+      db
+        .prepare(
+          `UPDATE voucher_codes
+           SET status='disabled',
+               assigned_user_voucher_id=NULL,
+               updated_at_ms=?
+           WHERE code=?
+             AND voucher_id=?`
+        )
+        .bind(Date.now(), row.code, String(row.voucher_id)),
+      db
+        .prepare(`DELETE FROM user_vouchers WHERE id=?`)
+        .bind(String(userVoucherId)),
+    ]);
+
+    const deleted = Number(batchRes?.[1]?.meta?.changes || 0) > 0;
     return jsonResponse({ ok: true, deleted });
   } catch (e) {
     console.error('Admin delete error:', e);

@@ -31,7 +31,7 @@ export async function onRequest(context) {
     const nowMs = Date.now();
 
     const row = await db
-      .prepare(`SELECT voucher_id FROM user_vouchers WHERE id=?`)
+      .prepare(`SELECT voucher_id, code FROM user_vouchers WHERE id=?`)
       .bind(String(userVoucherId))
       .first();
     if (!row?.voucher_id) return jsonResponse({ ok: false, message: 'Voucher not found' }, 404);
@@ -44,6 +44,19 @@ export async function onRequest(context) {
            WHERE id=? AND status='active'`
         )
         .bind(nowMs, nowMs, String(userVoucherId)),
+      db
+        .prepare(
+          `UPDATE voucher_codes
+           SET status='available',
+               assigned_user_voucher_id=NULL,
+               updated_at_ms=?
+           WHERE code=?
+             AND voucher_id=?
+             AND status='assigned'
+             AND assigned_user_voucher_id=?
+             AND changes() = 1`
+        )
+        .bind(nowMs, row.code, String(row.voucher_id), String(userVoucherId)),
       db
         .prepare(
           `UPDATE vouchers

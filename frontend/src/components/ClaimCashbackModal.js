@@ -8,7 +8,7 @@ export default function ClaimCashbackModal({ voucher, onClose }) {
 
   const logoPath = (voucher.merchant_logo || voucher.logo) ? `/${voucher.merchant_logo || voucher.logo}` : null;
   const merchantName = voucher.merchant_name || 'Restaurant';
-  const code = `WE-${String(voucher.id || '').slice(-6).toUpperCase()}`;
+  const code = voucher.code ? String(voucher.code) : `WE-${String(voucher.id || '').slice(-6).toUpperCase()}`;
 
   return (
     <div className="claim-overlay" onClick={onClose}>

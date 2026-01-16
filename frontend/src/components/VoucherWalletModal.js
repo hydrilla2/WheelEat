@@ -51,7 +51,7 @@ export default function VoucherWalletModal({ vouchers, onClose }) {
             <div className="voucher-wallet-list" role="list">
               {list.map((v) => {
                 const logoPath = (v.merchant_logo || v.logo) ? `/${v.merchant_logo || v.logo}` : null;
-                const code = `WE-${String(v.id || '').slice(-6).toUpperCase()}`;
+                const code = v.code ? String(v.code) : `WE-${String(v.id || '').slice(-6).toUpperCase()}`;
                 return (
                   <div key={v.id} className="voucher-wallet-item" role="listitem">
                     <div className="voucher-wallet-itemLeft">
