@@ -3,7 +3,7 @@ export const googleMapsLinks = {
   '103 Coffee': 'https://maps.app.goo.gl/fbBLzNbbAhyC5EtD8',
   "A'Decade": null,
   'Armoury Steakhouse': 'https://maps.app.goo.gl/8cy6us9hjZZAfgQU7',
-  'Ba Shu Jia Yan': null,
+  'Ba Shu Jia Yan': 'https://www.google.com/maps/search/?api=1&query=ba%20shu%20jia%20yan%20sunway%20square',
   'Beutea': 'https://maps.app.goo.gl/gTpa8hVRC3zoFKvX8',
   'Black Canyon': 'https://maps.app.goo.gl/bDrUgbEaBWs6N9z76',
   'Bread History': 'https://maps.app.goo.gl/YNf3xqP7gjnenGRz7',
