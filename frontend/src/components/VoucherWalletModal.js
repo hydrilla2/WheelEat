@@ -58,7 +58,7 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onUse,
                       {logoPath ? (
                         <img
                           src={logoPath}
-                          alt={v.merchant_name || 'Far Coffee'}
+                          alt={v.merchant_name || 'Restaurant'}
                           className="voucher-wallet-logo"
                           onError={(e) => {
                             e.target.style.display = 'none';
@@ -73,7 +73,7 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onUse,
 
                     <div className="voucher-wallet-itemMain">
                       <div className="voucher-wallet-amount">{formatRm(v.value_rm)}</div>
-                      <div className="voucher-wallet-restaurant">{v.merchant_name || 'Far Coffee'}</div>
+                      <div className="voucher-wallet-restaurant">{v.merchant_name || 'Restaurant'}</div>
                       <div className="voucher-wallet-meta">
                         <span className="voucher-wallet-code">{code}</span>
                         <span className="voucher-wallet-date">{formatDateFromMs(v.issued_at_ms)}</span>
@@ -90,7 +90,7 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onUse,
                         type="button"
                         className="voucher-wallet-open"
                         onClick={() => setClaimingVoucher(v)}
-                        aria-label={`Open voucher actions for ${v.merchant_name || 'Far Coffee'}`}
+                        aria-label={`Open voucher actions for ${v.merchant_name || 'Restaurant'}`}
                         title="Open"
                       >
                         Open
@@ -108,7 +108,7 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onUse,
                         type="button"
                         className="voucher-wallet-remove"
                         onClick={() => onRemove?.(v.id)}
-                        aria-label={`Remove voucher for ${v.merchant_name || 'Far Coffee'}`}
+                        aria-label={`Remove voucher for ${v.merchant_name || 'Restaurant'}`}
                         title="Remove"
                       >
                         Remove

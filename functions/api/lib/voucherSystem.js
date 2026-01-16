@@ -3,7 +3,7 @@ import { generateUUID, getD1Database } from './d1.js';
 // Demo configuration
 export const DEFAULT_VOUCHER_VALUE_RM = 5;
 export const DEFAULT_MIN_SPEND_RM = 30;
-export const DEFAULT_TOTAL_QTY_PER_RESTAURANT = 5;
+export const DEFAULT_TOTAL_QTY_PER_RESTAURANT = 10;
 export const DEFAULT_TTL_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 function slugify(input) {

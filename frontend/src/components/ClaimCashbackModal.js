@@ -7,7 +7,7 @@ export default function ClaimCashbackModal({ voucher, onClose }) {
   if (!voucher) return null;
 
   const logoPath = (voucher.merchant_logo || voucher.logo) ? `/${voucher.merchant_logo || voucher.logo}` : null;
-  const merchantName = voucher.merchant_name || 'Far Coffee';
+  const merchantName = voucher.merchant_name || 'Restaurant';
   const code = `WE-${String(voucher.id || '').slice(-6).toUpperCase()}`;
 
   return (

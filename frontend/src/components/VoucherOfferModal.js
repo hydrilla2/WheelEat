@@ -29,7 +29,7 @@ function formatMytExpiry(ms) {
 export default function VoucherOfferModal({ voucher, onAccept, onDecline, user }) {
   if (!voucher) return null;
 
-  const merchantName = voucher.merchant_name || 'Far Coffee';
+  const merchantName = voucher.merchant_name || 'Restaurant';
   const logoPath = (voucher.merchant_logo || voucher.logo) ? `/${voucher.merchant_logo || voucher.logo}` : null;
   const amountLabel = formatRm(voucher.value_rm ?? 10);
   const minSpendRm = Number(voucher.min_spend_rm);

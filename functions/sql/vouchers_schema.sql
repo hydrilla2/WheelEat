@@ -3,7 +3,7 @@
 -- Scenario / Rules:
 -- - Voucher value: RM5
 -- - Min spend: RM30
--- - Total vouchers per restaurant: 5
+-- - Total vouchers per restaurant: 10
 -- - Claim requires Google login (enforced by frontend; backend expects a stable user_id)
 -- - Voucher expiry: 24 hours from claim time
 --

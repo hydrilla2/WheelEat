@@ -82,8 +82,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
 
   const promoVouchers = useMemo(
     () => [
-      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 5 },
-      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Far Coffee', left: 5 },
+      { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
     ],
     []
   );
@@ -343,8 +342,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     }
 
     const featuredPrimary = allRestaurants.find((r) => r.name === 'Ba Shu Jia Yan');
-    const featuredSecondary = allRestaurants.find((r) => r.name === 'Far Coffee');
-    const copy = [featuredPrimary, featuredSecondary].filter(Boolean);
+    const copy = [featuredPrimary].filter(Boolean);
     if (copy.length === 0) {
       copy.push(...allRestaurants);
     }
@@ -352,7 +350,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
       const j = Math.floor(Math.random() * (i + 1));
       [copy[i], copy[j]] = [copy[j], copy[i]];
     }
-    setSpotlightList(copy.slice(0, Math.min(2, copy.length)));
+    setSpotlightList(copy.slice(0, 1));
     setSpotlightIndex(0);
   }, [allRestaurants, mallId]);
 
