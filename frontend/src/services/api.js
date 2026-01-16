@@ -316,4 +316,13 @@ export async function adminDeleteVoucher({ accessToken, userVoucherId }) {
   });
 }
 
+export async function adminRestoreVoucher({ accessToken, userVoucherId }) {
+  const url = buildUrl('/api/admin/vouchers/restore');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...withBearer(accessToken) },
+    body: JSON.stringify({ user_voucher_id: userVoucherId }),
+  });
+}
+
 

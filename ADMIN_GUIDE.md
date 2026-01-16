@@ -79,12 +79,19 @@ On **Admin → Vouchers** you will see:
     - Its code returns to pool (`voucher_codes.status = available`)
     - Stock increases by +1 (capped by `total_qty`)
 
-- **Delete (forever)**
-  - Intended meaning: “Remove this voucher and permanently destroy its code.”
+- **Delete (disable)**
+  - Intended meaning: “Remove this voucher from the user, and permanently disable its code.”
   - Backend behavior:
+    - The user voucher becomes `removed` (so it disappears from the user inventory)
     - The code becomes `disabled` (never re-issued)
-    - The `user_vouchers` row is deleted
     - Stock is **NOT** restocked
+
+- **Restore (+1)** *(only shown when `code_status = disabled`)*
+  - Intended meaning: “Undo a delete, re-enable the code and add it back to inventory.”
+  - Backend behavior:
+    - The code becomes `available` again
+    - Stock increases by +1 (capped by `total_qty`)
+    - The user voucher stays `removed` (it is **not** given back to the user)
 
 ## Search / Filters
 

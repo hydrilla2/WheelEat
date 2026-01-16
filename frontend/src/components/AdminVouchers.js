@@ -1,6 +1,6 @@
 import React, { useCallback, useMemo, useState } from 'react';
 import './AdminVouchers.css';
-import { adminDeleteVoucher, adminFetchUserVouchers, adminRevokeVoucher } from '../services/api';
+import { adminDeleteVoucher, adminFetchUserVouchers, adminRevokeVoucher, adminRestoreVoucher } from '../services/api';
 
 function formatMs(ms) {
   if (!ms) return '—';
@@ -61,6 +61,15 @@ export default function AdminVouchers({ user }) {
     async (userVoucherId) => {
       if (!window.confirm('DELETE this voucher forever (NO restock)?')) return;
       await adminDeleteVoucher({ accessToken, userVoucherId });
+      await refresh();
+    },
+    [accessToken, refresh]
+  );
+
+  const restore = useCallback(
+    async (userVoucherId) => {
+      if (!window.confirm('Restore this voucher code back to inventory (+1)?')) return;
+      await adminRestoreVoucher({ accessToken, userVoucherId });
       await refresh();
     },
     [accessToken, refresh]
@@ -131,16 +140,28 @@ export default function AdminVouchers({ user }) {
               </div>
             </div>
             <div>{r.merchant_name || '—'}</div>
-            <div className="admin-mono">{r.code || '—'}</div>
+            <div className="admin-mono">
+              <div>{r.code || '—'}</div>
+              {r.code_status ? <div className="admin-muted">code: {r.code_status}</div> : null}
+            </div>
             <div className="admin-badge">{r.status}</div>
             <div className="admin-mono">{formatMs(r.issued_at_ms)}</div>
             <div className="admin-mono">{formatMs(r.expired_at_ms)}</div>
             <div className="admin-actions">
-              <button className="admin-btn-secondary" type="button" onClick={() => revoke(r.user_voucher_id)} disabled={loading}>
-                Revoke (+1)
-              </button>
+              {r.status === 'active' ? (
+                <button className="admin-btn-secondary" type="button" onClick={() => revoke(r.user_voucher_id)} disabled={loading}>
+                  Revoke (+1)
+                </button>
+              ) : null}
+
+              {r.code_status === 'disabled' ? (
+                <button className="admin-btn-secondary" type="button" onClick={() => restore(r.user_voucher_id)} disabled={loading}>
+                  Restore (+1)
+                </button>
+              ) : null}
+
               <button className="admin-btn-danger" type="button" onClick={() => del(r.user_voucher_id)} disabled={loading}>
-                Delete
+                Delete (disable)
               </button>
             </div>
           </div>

@@ -589,6 +589,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                     role="menuitem"
                     className="header-menu-item"
                     onClick={() => {
+                      // Always refresh so admin revokes reflect immediately in the wallet.
+                      refreshVouchers();
                       setShowVoucherWallet(true);
                       setMenuOpen(false);
                     }}

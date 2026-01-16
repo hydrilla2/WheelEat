@@ -61,12 +61,14 @@ export async function onRequest(context) {
            uv.used_at_ms    AS used_at_ms,
            uv.removed_at_ms AS removed_at_ms,
            uv.code          AS code,
+           vc.status        AS code_status,
            v.id             AS voucher_id,
            v.merchant_name  AS merchant_name,
            v.value_rm       AS value_rm,
            v.min_spend_rm   AS min_spend_rm
          FROM user_vouchers uv
          JOIN vouchers v ON v.id = uv.voucher_id
+         LEFT JOIN voucher_codes vc ON vc.code = uv.code AND vc.voucher_id = uv.voucher_id
          LEFT JOIN users u ON u.id = uv.user_id
          ${whereSql}
          ORDER BY uv.issued_at_ms DESC

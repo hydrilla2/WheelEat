@@ -1,6 +1,6 @@
-// POST /api/admin/vouchers/delete
+// POST /api/admin/vouchers/restore
 // Body: { user_voucher_id: string }
-// Deletes a user_vouchers row WITHOUT restocking (delete forever).
+// Re-enables a disabled code and RESTOCKS +1 (restore back to inventory).
 
 import { createCORSResponse, jsonResponse } from '../../lib/cors.js';
 import { getD1Database } from '../../lib/d1.js';
@@ -28,6 +28,7 @@ export async function onRequest(context) {
   try {
     if (!env.DB) return jsonResponse({ error: 'Database not configured' }, 500);
     const db = getD1Database(env);
+    const nowMs = Date.now();
 
     const row = await db
       .prepare(`SELECT voucher_id, code FROM user_vouchers WHERE id=?`)
@@ -35,35 +36,32 @@ export async function onRequest(context) {
       .first();
     if (!row?.voucher_id) return jsonResponse({ ok: false, message: 'Voucher not found' }, 404);
 
-    // Delete forever (SOFT delete):
-    // - Disable the code so it can never be re-issued.
-    // - Mark the user voucher as removed (so it disappears from user inventory).
-    // - Do NOT restock.
-    const nowMs = Date.now();
     const batchRes = await db.batch([
       db
         .prepare(
           `UPDATE voucher_codes
-           SET status='disabled',
+           SET status='available',
                assigned_user_voucher_id=NULL,
                updated_at_ms=?
            WHERE code=?
-             AND voucher_id=?`
+             AND voucher_id=?
+             AND status='disabled'`
         )
         .bind(nowMs, row.code, String(row.voucher_id)),
       db
         .prepare(
-          `UPDATE user_vouchers
-           SET status='removed', removed_at_ms=COALESCE(removed_at_ms, ?), updated_at_ms=?
+          `UPDATE vouchers
+           SET remaining_qty = MIN(total_qty, remaining_qty + changes()),
+               updated_at_ms=?
            WHERE id=?`
         )
-        .bind(nowMs, nowMs, String(userVoucherId)),
+        .bind(nowMs, String(row.voucher_id)),
     ]);
 
-    const updated = Number(batchRes?.[1]?.meta?.changes || 0) > 0;
-    return jsonResponse({ ok: true, deleted: updated });
+    const restored = Number(batchRes?.[0]?.meta?.changes || 0) > 0;
+    return jsonResponse({ ok: true, restored });
   } catch (e) {
-    console.error('Admin delete error:', e);
+    console.error('Admin restore error:', e);
     return jsonResponse({ error: 'Internal server error', message: e.message }, 500);
   }
 }
