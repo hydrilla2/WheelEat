@@ -109,7 +109,11 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   }, [user]);
 
   const isAdmin = useMemo(() => {
-    return user?.loginType === 'google' && String(user?.email || '').toLowerCase() === 'ybtan6666@gmail.com';
+    const email = String(user?.email || '').toLowerCase();
+    return (
+      user?.loginType === 'google' &&
+      (email === 'ybtan6666@gmail.com' || email === 'zixiuong@gmail.com')
+    );
   }, [user]);
 
   const refreshVouchers = useCallback(async () => {

@@ -6,7 +6,7 @@ function getBearerToken(request) {
   return m ? m[1] : null;
 }
 
-const DEFAULT_ADMIN_EMAIL = 'ybtan6666@gmail.com';
+const DEFAULT_ADMIN_EMAILS = ['ybtan6666@gmail.com', 'zixiuong@gmail.com'];
 
 async function verifyGoogleAccessToken(accessToken) {
   // Validates the token by calling Google UserInfo endpoint.
@@ -32,11 +32,16 @@ export async function requireAdmin(request, env) {
   if (!info) return jsonResponse({ error: 'Unauthorized' }, 401);
 
   const email = String(info.email || '').toLowerCase();
-  const allowed = (env.ADMIN_EMAIL || DEFAULT_ADMIN_EMAIL).toLowerCase();
   const emailVerified = info.email_verified === true || info.email_verified === 'true';
 
   if (!emailVerified) return jsonResponse({ error: 'Unauthorized' }, 401);
-  if (email !== allowed) return jsonResponse({ error: 'Forbidden' }, 403);
+  const allowList = (env.ADMIN_EMAILS || env.ADMIN_EMAIL || '')
+    .split(',')
+    .map((s) => s.trim().toLowerCase())
+    .filter(Boolean);
+  const allowedEmails = allowList.length ? allowList : DEFAULT_ADMIN_EMAILS;
+
+  if (!allowedEmails.includes(email)) return jsonResponse({ error: 'Forbidden' }, 403);
 
   return null;
 }

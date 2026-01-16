@@ -13,7 +13,11 @@ function formatMs(ms) {
 
 export default function AdminVouchers({ user }) {
   const isAdmin = useMemo(() => {
-    return user?.loginType === 'google' && String(user?.email || '').toLowerCase() === 'ybtan6666@gmail.com';
+    const email = String(user?.email || '').toLowerCase();
+    return (
+      user?.loginType === 'google' &&
+      (email === 'ybtan6666@gmail.com' || email === 'zixiuong@gmail.com')
+    );
   }, [user]);
 
   const [status, setStatus] = useState('active');
