@@ -47,6 +47,22 @@
   box-shadow: 0 4px 8px rgba(102, 126, 234, 0.2);
 }
 
+.category-chip:disabled,
+.category-chip[aria-disabled="true"] {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.category-chip:disabled:hover,
+.category-chip[aria-disabled="true"]:hover {
+  border-color: #e0e0e0;
+  color: #666;
+  transform: none;
+  box-shadow: none;
+}
+
 .category-chip.selected {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

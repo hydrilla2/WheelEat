@@ -369,8 +369,14 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
 
   // Load restaurants when categories or mall changes
   useEffect(() => {
-    if (selectedCategories.length > 0 && mallId) {
-      fetchRestaurants({ categories: selectedCategories, mallId, dietaryNeed })
+    if (!mallId) {
+      setRestaurants([]);
+      return;
+    }
+
+    const categoriesToFetch = selectedCategories.length > 0 ? selectedCategories : categories;
+    if (categoriesToFetch.length > 0) {
+      fetchRestaurants({ categories: categoriesToFetch, mallId, dietaryNeed })
         .then((data) => setRestaurants(data.restaurants))
         .catch((err) => {
           console.error('Failed to load restaurants:', err);
@@ -379,16 +385,18 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     } else {
       setRestaurants([]);
     }
-  }, [selectedCategories, mallId, dietaryNeed]);
+  }, [selectedCategories, categories, mallId, dietaryNeed]);
 
   const handleSpin = async () => {
-    if (selectedCategories.length === 0) {
-      setError('Please select at least one restaurant category');
+    const categoriesToUse = selectedCategories.length > 0 ? selectedCategories : categories;
+
+    if (categoriesToUse.length === 0) {
+      setError('No restaurant categories available');
       return;
     }
 
     if (restaurants.length === 0) {
-      setError('No restaurants found in selected categories');
+      setError('No restaurants found');
       return;
     }
 
@@ -401,7 +409,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
 
     // Get the result immediately (while spinning) but don't show it yet
     try {
-      const data = await spinWheel({ selectedCategories, mallId, dietaryNeed });
+      const data = await spinWheel({ selectedCategories: categoriesToUse, mallId, dietaryNeed });
       // Set result for wheel calculation, but don't show modal yet
       setResult(data);
       
@@ -673,6 +681,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                 onChange={setSelectedCategories}
                 categories={categories}
                 onClickSound={playClick}
+                disabled={spinning}
               />
             </div>
 
@@ -685,7 +694,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
               <button
                 className="spin-button"
                 onClick={handleSpin}
-                disabled={spinning || selectedCategories.length === 0 || restaurants.length === 0}
+                disabled={spinning || restaurants.length === 0}
               >
                 {spinning ? 'Spinning...' : '🎰 Spin the Wheel!'}
               </button>
@@ -711,6 +720,23 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
             />
           </div>
         )}
+
+        {activeView === 'wheel' ? (
+          <section className="feedback-section" aria-label="Feedback form">
+            <div className="feedback-header">
+              <h2>Feedback</h2>
+              <p>Help us improve WheelEat. Your feedback takes less than a minute.</p>
+              <a
+                className="feedback-link"
+                href="https://forms.gle/tvibjuqAosBAGNmSA"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Open Google Form
+              </a>
+            </div>
+          </section>
+        ) : null}
       </div>
       
       {/* Result Modal - shows after spin completes */}
