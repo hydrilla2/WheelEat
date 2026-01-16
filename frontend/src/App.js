@@ -15,8 +15,6 @@ import {
   claimRestaurantVoucher,
   fetchUserVouchers,
   fetchVoucherStocks,
-  removeUserVoucher,
-  markVoucherUsed,
   transferVouchers,
 } from './services/api';
 import Leaderboard from './components/Leaderboard';
@@ -495,29 +493,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     setPendingVoucher(null);
   };
 
-  const handleRemoveVoucher = async (userVoucherId) => {
-    await removeUserVoucher({ userId: effectiveUserId, userVoucherId });
-    await refreshVouchers();
-    // Removal restocks +1 in backend; refresh stocks for the featured restaurants
-    refreshVoucherStocks(spotlightList.map((r) => r?.name));
-  };
-
-  const handleUseVoucher = async (userVoucherId) => {
-    await markVoucherUsed({ userId: effectiveUserId, userVoucherId });
-    await refreshVouchers();
-  };
-
-  const handleClearVouchers = async () => {
-    // Release all active vouchers back to inventory (demo behavior).
-    for (const v of vouchers) {
-      try {
-        await removeUserVoucher({ userId: effectiveUserId, userVoucherId: v.id });
-      } catch (e) {
-        console.debug('Failed to remove voucher during clear:', e);
-      }
-    }
-    await refreshVouchers();
-  };
+  // Voucher removal/used actions intentionally disabled in UI.
 
   return (
     <div className="App">
@@ -995,9 +971,6 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
         <VoucherWalletModal
           vouchers={vouchers}
           onClose={() => setShowVoucherWallet(false)}
-          onRemove={handleRemoveVoucher}
-          onUse={handleUseVoucher}
-          onClear={handleClearVouchers}
         />
       ) : null}
     </div>

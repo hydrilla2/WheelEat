@@ -25,7 +25,7 @@ function formatExpiry(ms) {
   }
 }
 
-export default function VoucherWalletModal({ vouchers, onClose, onRemove, onUse, onClear }) {
+export default function VoucherWalletModal({ vouchers, onClose }) {
   const list = Array.isArray(vouchers) ? vouchers : [];
   const [claimingVoucher, setClaimingVoucher] = useState(null);
 
@@ -95,34 +95,10 @@ export default function VoucherWalletModal({ vouchers, onClose, onRemove, onUse,
                       >
                         Open
                       </button>
-                      <button
-                        type="button"
-                        className="voucher-wallet-open"
-                        onClick={() => onUse?.(v.id)}
-                        aria-label={`Mark voucher as used for ${v.merchant_name || 'Restaurant'}`}
-                        title="Used"
-                      >
-                        Used
-                      </button>
-                      <button
-                        type="button"
-                        className="voucher-wallet-remove"
-                        onClick={() => onRemove?.(v.id)}
-                        aria-label={`Remove voucher for ${v.merchant_name || 'Restaurant'}`}
-                        title="Remove"
-                      >
-                        Remove
-                      </button>
                     </div>
                   </div>
                 );
               })}
-            </div>
-
-            <div className="voucher-wallet-footer">
-              <button type="button" className="voucher-wallet-clear" onClick={onClear}>
-                Clear all
-              </button>
             </div>
           </>
         )}
