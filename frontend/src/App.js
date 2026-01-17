@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import SpinWheel from './components/SpinWheel';
 import CategorySelector from './components/CategorySelector';
+import BudgetSelector from './components/BudgetSelector';
 import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
@@ -31,6 +32,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [mallsLoading, setMallsLoading] = useState(true);
   const [dietaryNeed, setDietaryNeed] = useState('any');
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedBudgets, setSelectedBudgets] = useState([]);
   const [categories, setCategories] = useState([]);
   const [restaurants, setRestaurants] = useState([]);
   const [spinning, setSpinning] = useState(false);
@@ -169,7 +171,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       // If no categories selected, fetch all categories first
       const categoriesToFetch = selectedCategories.length > 0 ? selectedCategories : categories;
       if (categoriesToFetch.length > 0) {
-        fetchRestaurants({ categories: categoriesToFetch, mallId, dietaryNeed })
+        fetchRestaurants({ categories: categoriesToFetch, mallId, dietaryNeed, budgets: selectedBudgets })
           .then((data) => setRestaurants(data.restaurants))
           .catch((err) => {
             console.error('Failed to load restaurants:', err);
@@ -179,7 +181,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     } else {
       setRestaurants([]);
     }
-  }, [selectedCategories, mallId, dietaryNeed, categories]);
+  }, [selectedCategories, selectedBudgets, mallId, dietaryNeed, categories]);
 
   const handleSpin = async () => {
     // If no categories selected, use all categories
@@ -204,7 +206,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
 
     // Get the result immediately (while spinning) but don't show it yet
     try {
-      const data = await spinWheel({ selectedCategories: categoriesToUse, mallId, dietaryNeed });
+      const data = await spinWheel({ selectedCategories: categoriesToUse, mallId, dietaryNeed, selectedBudgets });
       // Set result for wheel calculation, but don't show modal yet
       setResult(data);
       
@@ -318,6 +320,11 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               <DietarySelector
                 value={dietaryNeed}
                 onChange={setDietaryNeed}
+                onClickSound={playClick}
+              />
+              <BudgetSelector
+                selected={selectedBudgets}
+                onChange={setSelectedBudgets}
                 onClickSound={playClick}
               />
               <CategorySelector

@@ -62,17 +62,19 @@ export async function fetchCategories(mallId) {
   return await fetchJson(url);
 }
 
-export async function fetchRestaurants({ categories, mallId, dietaryNeed }) {
+export async function fetchRestaurants({ categories, mallId, dietaryNeed, budgets }) {
   const categoriesParam = Array.isArray(categories) ? categories.join(',') : categories;
+  const budgetsParam = Array.isArray(budgets) ? (budgets.length > 0 ? budgets.join(',') : undefined) : budgets;
   const url = buildUrl('/api/restaurants', {
     categories: categoriesParam,
     mall_id: mallId,
     dietary_need: dietaryNeed,
+    budgets: budgetsParam,
   });
   return await fetchJson(url);
 }
 
-export async function spinWheel({ selectedCategories, mallId, dietaryNeed }) {
+export async function spinWheel({ selectedCategories, mallId, dietaryNeed, selectedBudgets }) {
   const url = buildUrl('/api/spin');
   return await fetchJson(url, {
     method: 'POST',
@@ -81,6 +83,7 @@ export async function spinWheel({ selectedCategories, mallId, dietaryNeed }) {
       selected_categories: selectedCategories,
       mall_id: mallId,
       dietary_need: dietaryNeed,
+      selected_budgets: Array.isArray(selectedBudgets) && selectedBudgets.length > 0 ? selectedBudgets : undefined,
     }),
   });
 }

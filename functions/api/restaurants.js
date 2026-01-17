@@ -24,14 +24,16 @@ export async function onRequest(context) {
     let restaurants;
 
     const categoriesParam = url.searchParams.get('categories');
+    const budgetsParam = url.searchParams.get('budgets');
+    const budgets = budgetsParam ? budgetsParam.split(',').map((b) => b.trim()).filter(Boolean) : [];
     if (categoriesParam) {
       // Filter by categories and dietary need
       const categoryList = categoriesParam.split(',').map(c => c.trim());
-      restaurants = getRestaurantsByCategories(categoryList, mallId, dietaryNeed);
+      restaurants = getRestaurantsByCategories(categoryList, mallId, dietaryNeed, budgets);
     } else {
       // Get all restaurants with dietary filter
       const allCategories = getAllCategories(mallId);
-      restaurants = getRestaurantsByCategories(allCategories, mallId, dietaryNeed);
+      restaurants = getRestaurantsByCategories(allCategories, mallId, dietaryNeed, budgets);
     }
 
     return jsonResponse({

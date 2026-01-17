@@ -70,9 +70,11 @@ export async function onRequest(context) {
 
     const mallId = body.mall_id || 'sunway_square';
     const selectedCategories = body.selected_categories;
+    const selectedBudgets = Array.isArray(body.selected_budgets) ? body.selected_budgets : [];
+    const dietaryNeed = body.dietary_need || 'any';
 
     // Get all restaurants in the selected categories for the specified mall
-    const availableRestaurants = getRestaurantsByCategories(selectedCategories, mallId);
+    const availableRestaurants = getRestaurantsByCategories(selectedCategories, mallId, dietaryNeed, selectedBudgets);
 
     if (availableRestaurants.length === 0) {
       return jsonResponse({ detail: 'No restaurants found in selected categories' }, 400);
@@ -99,7 +101,7 @@ export async function onRequest(context) {
         selectedRestaurant.unit || null,
         selectedRestaurant.floor || null,
         selectedRestaurant.category,
-        body.dietary_need || 'any',
+        dietaryNeed,
         timestamp,
         mallId,
         JSON.stringify(selectedCategories),
@@ -119,6 +121,7 @@ export async function onRequest(context) {
         restaurant_unit: selectedRestaurant.unit,
         restaurant_floor: selectedRestaurant.floor,
         category: selectedRestaurant.category,
+        budget: selectedRestaurant.budget,
         timestamp: new Date(timestamp * 1000).toISOString(),
         spin_id: spinId,
         logo: selectedRestaurant.logo,
@@ -136,6 +139,7 @@ export async function onRequest(context) {
         restaurant_unit: selectedRestaurant.unit,
         restaurant_floor: selectedRestaurant.floor,
         category: selectedRestaurant.category,
+        budget: selectedRestaurant.budget,
         timestamp: new Date().toISOString(),
         spin_id: null,
         logo: selectedRestaurant.logo,

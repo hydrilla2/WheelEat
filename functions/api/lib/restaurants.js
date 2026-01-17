@@ -166,15 +166,43 @@ export function getRestaurantsByMall(mallId) {
   return MALL_RESTAURANTS[mallId] || [];
 }
 
-export function getRestaurantsByCategories(categories, mallId = "sunway_square", dietaryNeed = "any") {
+export function getBudgetTier(category) {
+  switch (category) {
+    case "Coffee & Cafes":
+    case "Tea & Beverages":
+    case "Bakery & Pastry":
+    case "Snacks & Desserts":
+    case "Snacks & Specialty Store":
+    case "Fast Food":
+    case "Supermarket":
+      return "Below 20";
+    case "Local & Malaysian":
+    case "Chinese & Taiwanese":
+    case "Korean Cuisine":
+      return "20 - 40";
+    case "Japanese Cuisine":
+    case "Western & International":
+      return "Above 40";
+    default:
+      return "20 - 40";
+  }
+}
+
+export function getRestaurantsByCategories(categories, mallId = "sunway_square", dietaryNeed = "any", budgets = []) {
   const restaurants = getRestaurantsByMall(mallId);
   const matchingRestaurants = [];
+  const budgetSet = Array.isArray(budgets) && budgets.length > 0 ? new Set(budgets) : null;
   
   for (const restaurant of restaurants) {
     const [name, unit, floor, category, isHalal] = restaurant;
     
     // Check if category matches
     if (!categories.includes(category)) {
+      continue;
+    }
+
+    const budgetTier = getBudgetTier(category);
+    if (budgetSet && !budgetSet.has(budgetTier)) {
       continue;
     }
     
@@ -189,6 +217,7 @@ export function getRestaurantsByCategories(categories, mallId = "sunway_square",
       unit,
       floor,
       category,
+      budget: budgetTier,
       isHalal,
       logo: logoPath
     });
