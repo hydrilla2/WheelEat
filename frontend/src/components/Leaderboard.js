@@ -5,6 +5,7 @@ import { sortLeaderboardRows } from '../utils/leaderboard';
 import { getRestaurantLocation } from '../data/restaurantLocations';
 import CategorySelector from './CategorySelector';
 import DietarySelector from './DietarySelector';
+import BudgetSelector from './BudgetSelector';
 
 function clampRating(rating) {
   if (typeof rating !== 'number' || Number.isNaN(rating)) return null;
@@ -28,6 +29,7 @@ function renderStars(rating) {
 export default function Leaderboard({ mallId, mallName, categories }) {
   const [mode, setMode] = useState('rating'); // 'rating' | 'reviews'
   const [selectedCategories, setSelectedCategories] = useState([]);
+  const [selectedBudgets, setSelectedBudgets] = useState([]);
   const [dietaryNeed, setDietaryNeed] = useState('any');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -41,6 +43,7 @@ export default function Leaderboard({ mallId, mallName, categories }) {
     setLoadingProgress('Fetching leaderboard in batches...');
     // Keep UX predictable per mall change
     setSelectedCategories([]);
+    setSelectedBudgets([]);
     setDietaryNeed('any');
     setMode('rating');
 
@@ -89,18 +92,21 @@ export default function Leaderboard({ mallId, mallName, categories }) {
 
   const filteredRows = useMemo(() => {
     const cats = Array.isArray(selectedCategories) ? selectedCategories : [];
+    const budgets = Array.isArray(selectedBudgets) ? selectedBudgets : [];
     const dietary = dietaryNeed || 'any';
 
     const src = Array.isArray(rows) ? rows : [];
     return src.filter((r) => {
       const catOk = cats.length === 0 ? true : cats.includes(r?.category);
+      const budgetOk = budgets.length === 0 ? true : budgets.includes(r?.budget);
+      if (!budgetOk) return false;
       if (!catOk) return false;
       if (dietary === 'halal_pork_free') {
         return Boolean(r?.isHalal);
       }
       return true;
     });
-  }, [selectedCategories, dietaryNeed, rows]);
+  }, [selectedCategories, selectedBudgets, dietaryNeed, rows]);
 
   const sorted = useMemo(() => {
     // Use shared logic so future features (trending, top picks) can reuse the same ranking behavior.
@@ -122,6 +128,10 @@ export default function Leaderboard({ mallId, mallName, categories }) {
             selected={selectedCategories}
             onChange={setSelectedCategories}
             categories={availableCategories.length > 0 ? availableCategories : undefined}
+          />
+          <BudgetSelector
+            selected={selectedBudgets}
+            onChange={setSelectedBudgets}
           />
           <DietarySelector value={dietaryNeed} onChange={setDietaryNeed} />
 

@@ -7,7 +7,7 @@
 // - Caches results for a short time to reduce repeated API calls.
 
 import { createCORSResponse, jsonResponse } from './lib/cors.js';
-import { getMallInfo, getRestaurantsByMall, getLogoPath } from './lib/restaurants.js';
+import { getMallInfo, getRestaurantsByMall, getLogoPath, getBudgetTier } from './lib/restaurants.js';
 import { getPlaceId, isExplicitlyUnavailable } from './lib/restaurant-places.js';
 
 const CACHE_TTL_SECONDS = 300; // 5 minutes
@@ -22,6 +22,7 @@ function toRestaurantObject(row, mallId) {
     unit: unit || null,
     floor: floor || null,
     category: category || 'Unknown',
+    budget: getBudgetTier(category),
     logo: getLogoPath(name, mallId),
     isHalal: Boolean(isHalal),
   };
