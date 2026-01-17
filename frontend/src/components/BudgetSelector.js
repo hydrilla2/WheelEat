@@ -1,7 +1,7 @@
 import React from 'react';
 import './CategorySelector.css';
 
-const DEFAULT_BUDGETS = ['Below 20', '20 - 40', 'Above 40'];
+const DEFAULT_BUDGETS = ['Below RM20', 'RM20 - RM40', 'Above RM40'];
 
 function BudgetSelector({ selected, onChange, budgets = DEFAULT_BUDGETS, onClickSound }) {
   const toggleBudget = (budget) => {
@@ -26,7 +26,7 @@ function BudgetSelector({ selected, onChange, budgets = DEFAULT_BUDGETS, onClick
             type="button"
           >
             {budget}
-            {selected.includes(budget) && <span className="checkmark">バ"</span>}
+            {selected.includes(budget) && <span className="checkmark">✓</span>}
           </button>
         ))}
       </div>

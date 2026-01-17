@@ -175,16 +175,16 @@ export function getBudgetTier(category) {
     case "Snacks & Specialty Store":
     case "Fast Food":
     case "Supermarket":
-      return "Below 20";
+      return "Below RM20";
     case "Local & Malaysian":
     case "Chinese & Taiwanese":
     case "Korean Cuisine":
-      return "20 - 40";
+      return "RM20 - RM40";
     case "Japanese Cuisine":
     case "Western & International":
-      return "Above 40";
+      return "Above RM40";
     default:
-      return "20 - 40";
+      return "RM20 - RM40";
   }
 }
 
