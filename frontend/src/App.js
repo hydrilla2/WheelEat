@@ -112,7 +112,9 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     const email = String(user?.email || '').toLowerCase();
     return (
       user?.loginType === 'google' &&
-      (email === 'ybtan6666@gmail.com' || email === 'zixiuong@gmail.com' || email === 'zkho0011@student.monash.edu')
+      (email === 'ybtan6666@gmail.com' ||
+        email === 'zixiuong@gmail.com' ||
+        email === 'zkho0011@student.monash.edu')
     );
   }, [user]);
 
