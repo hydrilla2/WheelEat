@@ -6,7 +6,7 @@ function getBearerToken(request) {
   return m ? m[1] : null;
 }
 
-const DEFAULT_ADMIN_EMAILS = ['ybtan6666@gmail.com', 'zixiuong@gmail.com'];
+const DEFAULT_ADMIN_EMAILS = ['ybtan6666@gmail.com', 'zixiuong@gmail.com', 'zkho0011@student.monash.edu'];
 
 async function verifyGoogleAccessToken(accessToken) {
   // Validates the token by calling Google UserInfo endpoint.
