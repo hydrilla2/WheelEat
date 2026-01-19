@@ -49,6 +49,8 @@ function useViewportSize() {
 function SpinWheel({ restaurants, spinning, result, spinSeq = 0 }) {
   const rotationRef = useRef(0); // current rotation in degrees (normalized 0..360)
   const lastSpinKeyRef = useRef(null);
+  const rotatorRef = useRef(null);
+  const rafRef = useRef(0);
   const [rotationDeg, setRotationDeg] = useState(0);
   const [transitionMs, setTransitionMs] = useState(0);
   const spinAudioRef = useRef(null);
@@ -143,6 +145,24 @@ function SpinWheel({ restaurants, spinning, result, spinSeq = 0 }) {
     ].join(' ');
   };
 
+  const getRotationDegFromElement = (el) => {
+    try {
+      if (!el) return null;
+      const tr = window.getComputedStyle(el).transform;
+      if (!tr || tr === 'none') return 0;
+      // matrix(a, b, c, d, tx, ty)
+      const m = tr.match(/^matrix\((.+)\)$/);
+      if (!m) return 0;
+      const parts = m[1].split(',').map((p) => Number(p.trim()));
+      if (parts.length < 4) return 0;
+      const [a, b] = parts;
+      const deg = (Math.atan2(b, a) * 180) / Math.PI;
+      return ((deg % 360) + 360) % 360;
+    } catch {
+      return null;
+    }
+  };
+
   const getLabelStyleForCount = (count, isMobile, isSmallMobile) => {
     // Adjust font sizes for mobile - make them larger for better readability
     const baseMultiplier = isSmallMobile ? 1.1 : isMobile ? 1.0 : 0.95;
@@ -197,16 +217,21 @@ function SpinWheel({ restaurants, spinning, result, spinSeq = 0 }) {
     setTransitionMs(0);
     setRotationDeg(0);
     lastSpinKeyRef.current = null;
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    rafRef.current = 0;
   }, [items.length]);
+
+  const resultName = useMemo(() => {
+    return typeof result === 'string' ? result : result?.restaurant_name;
+  }, [result]);
+
+  const idleSpinning = spinning && items.length > 1 && !resultName;
 
   // Start a spin ONLY when we have both `spinning === true` and a concrete result name.
   // This avoids the old mismatch where the wheel started moving before the backend result arrived.
   useEffect(() => {
     if (!spinning) return;
     if (!items || items.length === 0) return;
-    if (!result) return;
-
-    const resultName = typeof result === 'string' ? result : result?.restaurant_name;
     if (!resultName) return;
 
     const spinKey = `${spinSeq}__${items.length}`;
@@ -219,6 +244,10 @@ function SpinWheel({ restaurants, spinning, result, spinSeq = 0 }) {
       return;
     }
 
+    // If we were idling, snapshot the current CSS-animated rotation so we can continue smoothly.
+    const current = getRotationDegFromElement(rotatorRef.current);
+    const base = typeof current === 'number' ? current : rotationRef.current;
+
     const targetCenterDegFromTop = targetIndex * sliceDeg + sliceDeg / 2;
     // rotation=0 means slice 0 boundary starts at top; pointer is at top.
     // To bring target center to top, rotate by -(targetCenterDegFromTop)
@@ -226,11 +255,18 @@ function SpinWheel({ restaurants, spinning, result, spinSeq = 0 }) {
 
     // We animate to a big value, then normalize on transition end.
     const fullRotations = 5 * 360; // fixed 5 turns for consistency
-    const target = fullRotations + desiredFinal;
+    const delta = ((desiredFinal - base) % 360 + 360) % 360;
+    const target = base + fullRotations + delta;
 
-    setTransitionMs(3200);
-    setRotationDeg(target);
-  }, [spinning, result, spinSeq, items, sliceDeg]);
+    // Freeze at base first, then animate to target (prevents jump when leaving idle animation).
+    if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    setTransitionMs(0);
+    setRotationDeg(base);
+    rafRef.current = requestAnimationFrame(() => {
+      setTransitionMs(3200);
+      setRotationDeg(target);
+    });
+  }, [spinning, resultName, spinSeq, items, sliceDeg]);
 
   const onTransitionEnd = () => {
     // Normalize rotation to 0..360 (no animation jump)
@@ -246,7 +282,7 @@ function SpinWheel({ restaurants, spinning, result, spinSeq = 0 }) {
         <div className="spin-wheel-pointer" aria-hidden="true" />
 
         <div
-          className="spin-wheel-rotator"
+          className={`spin-wheel-rotator${idleSpinning ? ' idle-spin' : ''}`}
           style={{
             width: wheelGeom.wheelSize,
             height: wheelGeom.wheelSize,
@@ -254,6 +290,7 @@ function SpinWheel({ restaurants, spinning, result, spinSeq = 0 }) {
             transitionDuration: `${transitionMs}ms`,
           }}
           onTransitionEnd={onTransitionEnd}
+          ref={rotatorRef}
         >
           <svg
             className="spin-wheel-svg"
