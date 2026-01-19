@@ -8,14 +8,13 @@ import ResultModal from './components/ResultModal';
 import Login from './components/Login';
 import {
   fetchMalls,
-  fetchCategories,
   fetchRestaurants,
-  spinWheel,
   trackPageView,
   claimRestaurantVoucher,
   fetchUserVouchers,
   fetchVoucherStocks,
   transferVouchers,
+  recordSpin,
 } from './services/api';
 import Leaderboard from './components/Leaderboard';
 import VoucherOfferModal from './components/VoucherOfferModal';
@@ -45,7 +44,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   const [dietaryNeed, setDietaryNeed] = useState('any');
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [restaurants, setRestaurants] = useState([]);
+  const [restaurantsCache, setRestaurantsCache] = useState([]);
+  const [restaurantsLoading, setRestaurantsLoading] = useState(false);
   const [allRestaurants, setAllRestaurants] = useState([]);
   const [spinning, setSpinning] = useState(false);
   const spinSeqRef = useRef(0);
@@ -53,6 +53,9 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   const [result, setResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState(null);
+  const spinTimeoutRef = useRef(0);
+  const spinShowRef = useRef(0);
+  const spinHardStopRef = useRef(0);
   const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard' | 'admin'
   const [menuOpen, setMenuOpen] = useState(false);
   const [showRestaurantList, setShowRestaurantList] = useState(false);
@@ -303,37 +306,41 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
 
   // Load categories when mall changes
   useEffect(() => {
-    if (mallId) {
-      fetchCategories(mallId)
-        .then((data) => {
-          setCategories(data.categories || []);
-        })
-        .catch((err) => {
-          console.error('Failed to load categories:', err);
-          setCategories([]);
-        });
+    if (!mallId) return;
+
+    // Track page view
+    trackPageView(user?.id || 'anonymous', mallId);
       
       // Reset selections when mall changes
       setSelectedCategories([]);
-      setRestaurants([]);
       setResult(null);
-    }
-  }, [mallId]);
-
-  // Load full restaurant list for spotlight (not filtered by category or dietary)
-  useEffect(() => {
-    if (!mallId || categories.length === 0) {
+    setShowResult(false);
+    setError(null);
+    setRestaurantsCache([]);
       setAllRestaurants([]);
-      return;
-    }
+    setCategories([]);
 
-    fetchRestaurants({ categories, mallId, dietaryNeed: 'any' })
-      .then((data) => setAllRestaurants(data.restaurants || []))
+    setRestaurantsLoading(true);
+    // Fetch minimal restaurant data ONCE per mall, cache it in memory/state.
+    // Do NOT refetch on every spin.
+    fetchRestaurants({ mallId, dietaryNeed: 'any' })
+      .then((data) => {
+        const list = Array.isArray(data?.restaurants) ? data.restaurants : [];
+        setRestaurantsCache(list);
+        setAllRestaurants(list);
+        const cats = Array.from(new Set(list.map((r) => r?.category).filter(Boolean))).sort();
+        setCategories(cats);
+      })
       .catch((err) => {
-        console.error('Failed to load spotlight restaurants:', err);
+        console.error('Failed to load restaurants cache:', err);
+        setRestaurantsCache([]);
         setAllRestaurants([]);
-      });
-  }, [mallId, categories]);
+        setCategories([]);
+      })
+      .finally(() => setRestaurantsLoading(false));
+  }, [mallId, user?.id]);
+
+  // (Spotlight list is built from `allRestaurants`, which comes from the cached fetch above.)
 
   // Build a small rotating spotlight list
   useEffect(() => {
@@ -367,35 +374,31 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
     return () => clearInterval(interval);
   }, [spotlightList]);
 
-  // Load restaurants when categories or mall changes
-  useEffect(() => {
-    if (!mallId) {
-      setRestaurants([]);
+  // Filter restaurants in-memory (no refetch) based on current UI selections.
+  const restaurants = useMemo(() => {
+    const list = Array.isArray(restaurantsCache) ? restaurantsCache : [];
+    const selectedSet = selectedCategories.length > 0 ? new Set(selectedCategories) : null;
+    const dietary = String(dietaryNeed || 'any');
+    return list.filter((r) => {
+      if (!r) return false;
+      if (selectedSet && !selectedSet.has(r.category)) return false;
+      if (dietary === 'halal_pork_free' && !r.isHalal) return false;
+      return true;
+    });
+  }, [restaurantsCache, selectedCategories, dietaryNeed]);
+
+  const handleSpin = async () => {
+    // Guard: do not allow concurrent spins.
+    if (spinning) return;
+    
+    const categoriesToUse = selectedCategories.length > 0 ? selectedCategories : categories;
+    if (categoriesToUse.length === 0) {
+      setError('No restaurant categories available');
       return;
     }
 
-    const categoriesToFetch = selectedCategories.length > 0 ? selectedCategories : categories;
-    if (categoriesToFetch.length > 0) {
-      fetchRestaurants({ categories: categoriesToFetch, mallId, dietaryNeed })
-        .then((data) => setRestaurants(data.restaurants))
-        .catch((err) => {
-          console.error('Failed to load restaurants:', err);
-          setRestaurants([]);
-        });
-    } else {
-      setRestaurants([]);
-    }
-  }, [selectedCategories, categories, mallId, dietaryNeed]);
-
-  const handleSpin = async () => {
-    // Ensure the wheel animates even if the backend returns the same restaurant twice in a row.
-    spinSeqRef.current += 1;
-    setSpinSeq(spinSeqRef.current);
-
-    const categoriesToUse = selectedCategories.length > 0 ? selectedCategories : categories;
-
-    if (categoriesToUse.length === 0) {
-      setError('No restaurant categories available');
+    if (restaurantsLoading) {
+      setError('Loading restaurants… please try again.');
       return;
     }
 
@@ -404,30 +407,70 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
       return;
     }
 
+    // Pre-calculate result synchronously from cached data BEFORE animation starts.
+    const selectedRestaurant = restaurants[Math.floor(Math.random() * restaurants.length)];
+    const timestampIso = new Date().toISOString();
+    const googleMapsUrl = getGoogleMapsLink(selectedRestaurant.name) || null;
+
+    const nextResult = {
+      restaurant_name: selectedRestaurant.name,
+      restaurant_unit: selectedRestaurant.unit || null,
+      restaurant_floor: selectedRestaurant.floor || null,
+      category: selectedRestaurant.category || null,
+      timestamp: timestampIso,
+      spin_id: null,
+      logo: selectedRestaurant.logo || null,
+      google_maps_url: googleMapsUrl,
+      google_maps_mobile_url: googleMapsUrl,
+      restaurant_location: selectedRestaurant.unit || null,
+    };
+
+    // Ensure the wheel animates even if the same restaurant is selected twice in a row.
+    spinSeqRef.current += 1;
+    setSpinSeq(spinSeqRef.current);
+
     setError(null);
-    setResult(null);
+    setResult(nextResult);
     setShowResult(false);
     
-    // Start spinning animation first
+    // Start spinning animation immediately (no async/network dependency).
     setSpinning(true);
 
-    // Get the result immediately (while spinning) but don't show it yet
-    try {
-      const data = await spinWheel({ selectedCategories: categoriesToUse, mallId, dietaryNeed });
-      // Set result for wheel calculation, but don't show modal yet
-      setResult(data);
-      
-      // After spin animation completes (3 seconds), show the result modal
-      setTimeout(() => {
+    // Clear any previous timers.
+    clearTimeout(spinTimeoutRef.current);
+    clearTimeout(spinShowRef.current);
+    clearTimeout(spinHardStopRef.current);
+
+    const SPIN_ANIM_MS = 3200; // should match SpinWheel transition
+    const SHOW_DELAY_MS = 300;
+    const HARD_STOP_MS = SPIN_ANIM_MS + 1500; // never allow infinite spin
+
+    // Reveal the pre-selected result after animation finishes.
+    spinTimeoutRef.current = setTimeout(() => {
         setSpinning(false);
-        // Small delay to ensure wheel has stopped
-        setTimeout(() => {
+      spinShowRef.current = setTimeout(() => setShowResult(true), SHOW_DELAY_MS);
+    }, SPIN_ANIM_MS);
+
+    // Fallback: if anything goes wrong, force stop and show result.
+    spinHardStopRef.current = setTimeout(() => {
+      setSpinning((prev) => {
+        if (!prev) return prev;
           setShowResult(true);
-        }, 300);
-      }, 3000); // Match the spin animation duration
-    } catch (err) {
-      setError(err.message || 'An error occurred while spinning');
-      setSpinning(false);
+        return false;
+      });
+    }, HARD_STOP_MS);
+
+    // Optional: async log to backend for leaderboard/analytics without blocking the spin.
+    // Fire-and-forget; never await this.
+    try {
+      recordSpin({
+        restaurantName: selectedRestaurant.name,
+        selectedCategories: categoriesToUse,
+        mallId,
+        dietaryNeed,
+      }).catch(() => {});
+    } catch {
+      // ignore
     }
   };
 
@@ -658,15 +701,15 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                         ) : null}
                       </div>
                       <div className="spotlight-details">
-                        <div className="spotlight-name">
-                          {spotlightList[spotlightIndex]?.name}
-                        </div>
-                        <div className="spotlight-meta">
-                          {spotlightList[spotlightIndex]?.category || 'Category'}
-                          {spotlightList[spotlightIndex]?.unit
-                            ? ` | ${spotlightList[spotlightIndex]?.unit}`
-                            : ''}
-                        </div>
+                      <div className="spotlight-name">
+                        {spotlightList[spotlightIndex]?.name}
+                      </div>
+                      <div className="spotlight-meta">
+                        {spotlightList[spotlightIndex]?.category || 'Category'}
+                        {spotlightList[spotlightIndex]?.unit
+                          ? ` | ${spotlightList[spotlightIndex]?.unit}`
+                          : ''}
+                      </div>
                       </div>
                     </div>
                   ) : (
@@ -809,12 +852,12 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                         ) : null}
                       </div>
                       <div className="restaurant-list-details">
-                        <div className="restaurant-list-name">{r.name}</div>
-                        <div className="restaurant-list-meta">
-                          {r.category || 'Category'}
-                          {r.unit ? ` | ${r.unit}` : ''}
-                          {r.floor ? ` | ${r.floor}` : ''}
-                        </div>
+                  <div className="restaurant-list-name">{r.name}</div>
+                  <div className="restaurant-list-meta">
+                    {r.category || 'Category'}
+                    {r.unit ? ` | ${r.unit}` : ''}
+                    {r.floor ? ` | ${r.floor}` : ''}
+                  </div>
                       </div>
                     </button>
                     {vouchersForRestaurant.length > 0 ? (
@@ -861,9 +904,9 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                                 return 'Collect voucher';
                               })()}
                             </button>
-                          </div>
-                        ))}
-                      </div>
+                </div>
+              ))}
+            </div>
                     ) : null}
                   </div>
                 );

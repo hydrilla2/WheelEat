@@ -70,16 +70,27 @@ export async function onRequest(context) {
 
     const mallId = body.mall_id || 'sunway_square';
     const selectedCategories = body.selected_categories;
+    const dietaryNeed = body.dietary_need || 'any';
 
     // Get all restaurants in the selected categories for the specified mall
-    const availableRestaurants = getRestaurantsByCategories(selectedCategories, mallId);
+    const availableRestaurants = getRestaurantsByCategories(selectedCategories, mallId, dietaryNeed);
 
     if (availableRestaurants.length === 0) {
       return jsonResponse({ detail: 'No restaurants found in selected categories' }, 400);
     }
 
-    // Random selection with equal probability
-    const selectedRestaurant = availableRestaurants[Math.floor(Math.random() * availableRestaurants.length)];
+    // If frontend pre-selected a restaurant, use it (for client-side spins + server-side logging).
+    // Otherwise, pick randomly on the server (legacy behavior).
+    let selectedRestaurant = null;
+    if (body.restaurant_name) {
+      selectedRestaurant = availableRestaurants.find((r) => r.name === body.restaurant_name) || null;
+      if (!selectedRestaurant) {
+        return jsonResponse({ detail: 'Selected restaurant not found in available set' }, 400);
+      }
+    } else {
+      // Random selection with equal probability
+      selectedRestaurant = availableRestaurants[Math.floor(Math.random() * availableRestaurants.length)];
+    }
 
     // Log the spin to D1 database
     try {
@@ -99,7 +110,7 @@ export async function onRequest(context) {
         selectedRestaurant.unit || null,
         selectedRestaurant.floor || null,
         selectedRestaurant.category,
-        body.dietary_need || 'any',
+        dietaryNeed,
         timestamp,
         mallId,
         JSON.stringify(selectedCategories),

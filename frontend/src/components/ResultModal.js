@@ -70,6 +70,8 @@ function ResultModal({ result, onClose, onSpinAgain }) {
                 src={logoPath} 
                 alt={result.restaurant_name}
                 className="result-logo"
+                loading="lazy"
+                decoding="async"
                 onError={(e) => {
                   // Log error and hide image if it fails to load
                   console.error('Failed to load logo:', logoPath, 'Error:', e);

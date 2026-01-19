@@ -72,6 +72,7 @@ export async function fetchRestaurants({ categories, mallId, dietaryNeed }) {
   return await fetchJson(url);
 }
 
+// Legacy: backend-random spin (kept for compatibility). Prefer local selection + recordSpin().
 export async function spinWheel({ selectedCategories, mallId, dietaryNeed, timeoutMs = 5000 }) {
   const url = buildUrl('/api/spin');
   const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
@@ -93,6 +94,35 @@ export async function spinWheel({ selectedCategories, mallId, dietaryNeed, timeo
       throw new Error('Spin timed out. Please spin again.');
     }
     throw e;
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
+// Record a spin result chosen locally (does not affect UI/animation; safe to fire-and-forget).
+export async function recordSpin({
+  restaurantName,
+  selectedCategories,
+  mallId,
+  dietaryNeed,
+  timeoutMs = 8000,
+}) {
+  const url = buildUrl('/api/spin');
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeout = setTimeout(() => controller?.abort(), Math.max(1000, Number(timeoutMs) || 8000));
+
+  try {
+    return await fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        selected_categories: selectedCategories,
+        mall_id: mallId,
+        dietary_need: dietaryNeed,
+        restaurant_name: restaurantName,
+      }),
+      signal: controller?.signal,
+    });
   } finally {
     clearTimeout(timeout);
   }
