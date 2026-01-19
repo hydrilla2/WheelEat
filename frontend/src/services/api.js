@@ -72,17 +72,30 @@ export async function fetchRestaurants({ categories, mallId, dietaryNeed }) {
   return await fetchJson(url);
 }
 
-export async function spinWheel({ selectedCategories, mallId, dietaryNeed }) {
+export async function spinWheel({ selectedCategories, mallId, dietaryNeed, timeoutMs = 5000 }) {
   const url = buildUrl('/api/spin');
-  return await fetchJson(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      selected_categories: selectedCategories,
-      mall_id: mallId,
-      dietary_need: dietaryNeed,
-    }),
-  });
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeout = setTimeout(() => controller?.abort(), Math.max(1000, Number(timeoutMs) || 5000));
+
+  try {
+    return await fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        selected_categories: selectedCategories,
+        mall_id: mallId,
+        dietary_need: dietaryNeed,
+      }),
+      signal: controller?.signal,
+    });
+  } catch (e) {
+    if (e?.name === 'AbortError') {
+      throw new Error('Spin timed out. Please spin again.');
+    }
+    throw e;
+  } finally {
+    clearTimeout(timeout);
+  }
 }
 
 export async function upsertUser({ id, name, email }) {

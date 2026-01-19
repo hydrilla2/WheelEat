@@ -70,17 +70,6 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
 
-  const promoMenuItems = useMemo(
-    () => [
-      { name: 'Signature Noodles', price: 'RM 18.90' },
-      { name: 'Spicy Mala Bowl', price: 'RM 22.90' },
-      { name: 'Soup Dumplings', price: 'RM 16.50' },
-      { name: 'Crispy Wontons', price: 'RM 12.90' },
-      { name: 'Iced Tea', price: 'RM 6.90' },
-    ],
-    []
-  );
-
   const promoVouchers = useMemo(
     () => [
       { value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 },
@@ -955,20 +944,6 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                     Open Google Maps
                   </button>
                 )}
-              </div>
-            </div>
-            <div className="restaurant-detail-promo">
-              <div className="restaurant-detail-promo-title">Promotion menu</div>
-              <div className="restaurant-detail-promo-track">
-                {promoMenuItems.map((item, index) => (
-                  <div key={`${item.name}-${index}`} className="promo-card">
-                    <div className="promo-card-image" aria-hidden="true">
-                      <div className="promo-card-icon">Meal</div>
-                    </div>
-                    <div className="promo-card-name">{item.name}</div>
-                    <div className="promo-card-price">{item.price}</div>
-                  </div>
-                ))}
               </div>
             </div>
             <div className="restaurant-detail-vouchers">

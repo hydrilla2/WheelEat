@@ -476,6 +476,10 @@ header h1 {
   display: grid;
   gap: 12px;
   text-align: center;
+  max-height: min(90vh, calc(100dvh - 28px));
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
 }
 
 .restaurant-detail-close {
@@ -697,12 +701,17 @@ header h1 {
 }
 
 @media (max-width: 480px) {
+  .restaurant-detail-overlay {
+    align-items: flex-start;
+    padding: 10px;
+  }
+
   .restaurant-list-row {
     padding: 10px;
   }
 
   .restaurant-detail-modal {
-    padding: 20px;
+    padding: 16px;
     border-radius: 18px;
   }
 
