@@ -48,6 +48,8 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   const [restaurants, setRestaurants] = useState([]);
   const [allRestaurants, setAllRestaurants] = useState([]);
   const [spinning, setSpinning] = useState(false);
+  const spinSeqRef = useRef(0);
+  const [spinSeq, setSpinSeq] = useState(0);
   const [result, setResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState(null);
@@ -397,6 +399,10 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
   }, [selectedCategories, categories, mallId, dietaryNeed]);
 
   const handleSpin = async () => {
+    // Ensure the wheel animates even if the backend returns the same restaurant twice in a row.
+    spinSeqRef.current += 1;
+    setSpinSeq(spinSeqRef.current);
+
     const categoriesToUse = selectedCategories.length > 0 ? selectedCategories : categories;
 
     if (categoriesToUse.length === 0) {
@@ -698,6 +704,7 @@ function WheelEatApp({ user, onLogout, onShowLogin, pendingVoucherClaim, setPend
                 restaurants={restaurants}
                 spinning={spinning}
                 result={result?.restaurant_name}
+                spinSeq={spinSeq}
               />
               <button
                 className="spin-button"
