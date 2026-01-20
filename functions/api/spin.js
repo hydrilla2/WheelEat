@@ -80,8 +80,18 @@ export async function onRequest(context) {
       return jsonResponse({ detail: 'No restaurants found in selected categories' }, 400);
     }
 
-    // Random selection with equal probability
-    const selectedRestaurant = availableRestaurants[Math.floor(Math.random() * availableRestaurants.length)];
+    // If frontend pre-selected a restaurant, use it (client-side spins + server-side logging).
+    // Otherwise, pick randomly on the server (legacy behavior).
+    let selectedRestaurant = null;
+    if (body.restaurant_name) {
+      selectedRestaurant = availableRestaurants.find((r) => r.name === body.restaurant_name) || null;
+      if (!selectedRestaurant) {
+        return jsonResponse({ detail: 'Selected restaurant not found in available set' }, 400);
+      }
+    } else {
+      // Random selection with equal probability
+      selectedRestaurant = availableRestaurants[Math.floor(Math.random() * availableRestaurants.length)];
+    }
 
     // Log the spin to D1 database
     try {

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import './App.css';
 import SpinWheel from './components/SpinWheel';
 import CategorySelector from './components/CategorySelector';
@@ -7,7 +7,7 @@ import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 import Login from './components/Login';
-import { fetchMalls, fetchCategories, fetchRestaurants, spinWheel, trackPageView } from './services/api';
+import { fetchMalls, fetchRestaurants, recordSpin, trackPageView } from './services/api';
 import Leaderboard from './components/Leaderboard';
 import { useSessionTracker } from './hooks/useSessionTracker';
 import { getEffectiveUserId } from './utils/userId';
@@ -34,11 +34,17 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const [selectedCategories, setSelectedCategories] = useState([]);
   const [selectedBudgets, setSelectedBudgets] = useState([]);
   const [categories, setCategories] = useState([]);
-  const [restaurants, setRestaurants] = useState([]);
+  const [restaurantsCache, setRestaurantsCache] = useState([]);
+  const [restaurantsLoading, setRestaurantsLoading] = useState(false);
   const [spinning, setSpinning] = useState(false);
+  const spinSeqRef = useRef(0);
+  const [spinSeq, setSpinSeq] = useState(0);
   const [result, setResult] = useState(null);
   const [showResult, setShowResult] = useState(false);
   const [error, setError] = useState(null);
+  const spinTimeoutRef = useRef(0);
+  const spinShowRef = useRef(0);
+  const spinHardStopRef = useRef(0);
   const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard'
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef(null);
@@ -146,49 +152,70 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Load categories when mall changes
+  // Load minimal restaurant list ONCE per mall, cache it in memory/state.
   useEffect(() => {
-    if (mallId) {
-      fetchCategories(mallId)
-        .then((data) => {
-          setCategories(data.categories || []);
-        })
-        .catch((err) => {
-          console.error('Failed to load categories:', err);
-          setCategories([]);
-        });
-      
-      // Reset selections when mall changes
-      setSelectedCategories([]);
-      setRestaurants([]);
-      setResult(null);
-    }
-  }, [mallId]);
+    if (!mallId) return;
 
-  // Load restaurants when categories or mall changes
-  useEffect(() => {
-    if (mallId) {
-      // If no categories selected, fetch all categories first
-      const categoriesToFetch = selectedCategories.length > 0 ? selectedCategories : categories;
-      if (categoriesToFetch.length > 0) {
-        fetchRestaurants({ categories: categoriesToFetch, mallId, dietaryNeed, budgets: selectedBudgets })
-          .then((data) => setRestaurants(data.restaurants))
-          .catch((err) => {
-            console.error('Failed to load restaurants:', err);
-            setRestaurants([]);
-          });
-      }
-    } else {
-      setRestaurants([]);
-    }
-  }, [selectedCategories, selectedBudgets, mallId, dietaryNeed, categories]);
+    // Track page view
+    trackPageView(user?.id || 'anonymous', mallId);
+
+    // Reset selections when mall changes
+    setSelectedCategories([]);
+    setSelectedBudgets([]);
+    setResult(null);
+    setShowResult(false);
+    setError(null);
+    setRestaurantsCache([]);
+    setCategories([]);
+
+    setRestaurantsLoading(true);
+    fetchRestaurants({ mallId, dietaryNeed: 'any' })
+      .then((data) => {
+        const list = Array.isArray(data?.restaurants) ? data.restaurants : [];
+        setRestaurantsCache(list);
+        const cats = Array.from(new Set(list.map((r) => r?.category).filter(Boolean))).sort();
+        setCategories(cats);
+      })
+      .catch((err) => {
+        console.error('Failed to load restaurants cache:', err);
+        setRestaurantsCache([]);
+        setCategories([]);
+      })
+      .finally(() => setRestaurantsLoading(false));
+  }, [mallId, user?.id]);
+
+  // Filter restaurants in-memory (no refetch) based on current UI selections.
+  const restaurants = useMemo(() => {
+    const list = Array.isArray(restaurantsCache) ? restaurantsCache : [];
+    if (list.length === 0) return [];
+
+    const categorySet = selectedCategories.length > 0 ? new Set(selectedCategories) : null;
+    const budgetSet = selectedBudgets.length > 0 ? new Set(selectedBudgets) : null;
+    const dietary = String(dietaryNeed || 'any');
+
+    return list.filter((r) => {
+      if (!r) return false;
+      if (categorySet && !categorySet.has(r.category)) return false;
+      if (budgetSet && !budgetSet.has(r.budget)) return false;
+      if (dietary === 'halal_pork_free' && !r.isHalal) return false;
+      return true;
+    });
+  }, [restaurantsCache, selectedCategories, selectedBudgets, dietaryNeed]);
 
   const handleSpin = async () => {
+    // Guard: prevent concurrent spins.
+    if (spinning) return;
+
     // If no categories selected, use all categories
     const categoriesToUse = selectedCategories.length > 0 ? selectedCategories : categories;
     
     if (categoriesToUse.length === 0) {
       setError('No restaurant categories available');
+      return;
+    }
+
+    if (restaurantsLoading) {
+      setError('Loading restaurants… please try again.');
       return;
     }
 
@@ -198,29 +225,70 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     }
 
     setError(null);
-    setResult(null);
     setShowResult(false);
     
-    // Start spinning animation first
+    // Pre-calculate result synchronously from cached data BEFORE animation starts.
+    const selectedRestaurant = restaurants[Math.floor(Math.random() * restaurants.length)];
+    const timestampIso = new Date().toISOString();
+    const googleMapsUrl = `https://maps.google.com/?q=${encodeURIComponent(`${selectedRestaurant.name} Sunway Square`)}`;
+
+    const nextResult = {
+      restaurant_name: selectedRestaurant.name,
+      restaurant_unit: selectedRestaurant.unit || null,
+      restaurant_floor: selectedRestaurant.floor || null,
+      category: selectedRestaurant.category || null,
+      budget: selectedRestaurant.budget || null,
+      timestamp: timestampIso,
+      spin_id: null,
+      logo: selectedRestaurant.logo || null,
+      google_maps_url: googleMapsUrl,
+      google_maps_mobile_url: googleMapsUrl,
+      restaurant_location: selectedRestaurant.unit || null,
+    };
+
+    // Ensure wheel animates even if the same restaurant is selected twice in a row.
+    spinSeqRef.current += 1;
+    setSpinSeq(spinSeqRef.current);
+
+    setResult(nextResult);
+
+    // Start spinning animation immediately (no async/network dependency).
     setSpinning(true);
 
-    // Get the result immediately (while spinning) but don't show it yet
-    try {
-      const data = await spinWheel({ selectedCategories: categoriesToUse, mallId, dietaryNeed, selectedBudgets });
-      // Set result for wheel calculation, but don't show modal yet
-      setResult(data);
-      
-      // After spin animation completes (3 seconds), show the result modal
-      setTimeout(() => {
-        setSpinning(false);
-        // Small delay to ensure wheel has stopped
-        setTimeout(() => {
-          setShowResult(true);
-        }, 300);
-      }, 3000); // Match the spin animation duration
-    } catch (err) {
-      setError(err.message || 'An error occurred while spinning');
+    // Clear any previous timers.
+    clearTimeout(spinTimeoutRef.current);
+    clearTimeout(spinShowRef.current);
+    clearTimeout(spinHardStopRef.current);
+
+    const SPIN_ANIM_MS = 3200; // should match SpinWheel transition
+    const SHOW_DELAY_MS = 300;
+    const HARD_STOP_MS = SPIN_ANIM_MS + 2000; // never allow infinite spin
+
+    spinTimeoutRef.current = setTimeout(() => {
       setSpinning(false);
+      spinShowRef.current = setTimeout(() => setShowResult(true), SHOW_DELAY_MS);
+    }, SPIN_ANIM_MS);
+
+    // Fallback: if anything goes wrong, force stop and show result.
+    spinHardStopRef.current = setTimeout(() => {
+      setSpinning((prev) => {
+        if (!prev) return prev;
+        setShowResult(true);
+        return false;
+      });
+    }, HARD_STOP_MS);
+
+    // Optional: async log to backend (leaderboard/analytics) without blocking the spin.
+    try {
+      recordSpin({
+        restaurantName: selectedRestaurant.name,
+        selectedCategories: categoriesToUse,
+        mallId,
+        dietaryNeed,
+        selectedBudgets,
+      }).catch(() => {});
+    } catch {
+      // ignore
     }
   };
 
@@ -340,6 +408,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 restaurants={restaurants}
                 spinning={spinning}
                 result={result?.restaurant_name}
+                spinSeq={spinSeq}
               />
               <button
                 className="spin-button"

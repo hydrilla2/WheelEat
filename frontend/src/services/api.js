@@ -88,6 +88,36 @@ export async function spinWheel({ selectedCategories, mallId, dietaryNeed, selec
   });
 }
 
+// Record a spin chosen locally (fire-and-forget). This must never block UI.
+export async function recordSpin({
+  restaurantName,
+  selectedCategories,
+  mallId,
+  dietaryNeed,
+  selectedBudgets,
+  timeoutMs = 8000,
+}) {
+  const url = buildUrl('/api/spin');
+  const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+  const timeout = setTimeout(() => controller?.abort(), Math.max(1000, Number(timeoutMs) || 8000));
+  try {
+    return await fetchJson(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        selected_categories: selectedCategories,
+        mall_id: mallId,
+        dietary_need: dietaryNeed,
+        selected_budgets: Array.isArray(selectedBudgets) && selectedBudgets.length > 0 ? selectedBudgets : undefined,
+        restaurant_name: restaurantName,
+      }),
+      signal: controller?.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+
 export async function upsertUser({ id, name, email }) {
   const url = buildUrl('/api/users');
   return await fetchJson(url, {

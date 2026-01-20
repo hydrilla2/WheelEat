@@ -46,7 +46,7 @@ function useViewportSize() {
   return vp;
 }
 
-function SpinWheel({ restaurants, spinning, result }) {
+function SpinWheel({ restaurants, spinning, result, spinSeq = 0 }) {
   const rotationRef = useRef(0); // current rotation in degrees (normalized 0..360)
   const lastSpinKeyRef = useRef(null);
   const [rotationDeg, setRotationDeg] = useState(0);
@@ -209,7 +209,8 @@ function SpinWheel({ restaurants, spinning, result }) {
     const resultName = typeof result === 'string' ? result : result?.restaurant_name;
     if (!resultName) return;
 
-    const spinKey = `${resultName}__${items.length}`;
+    // Use spin sequence so we still animate even if the same restaurant is selected twice in a row.
+    const spinKey = `${spinSeq}__${items.length}`;
     if (lastSpinKeyRef.current === spinKey) return;
     lastSpinKeyRef.current = spinKey;
 
@@ -230,7 +231,7 @@ function SpinWheel({ restaurants, spinning, result }) {
 
     setTransitionMs(3200);
     setRotationDeg(target);
-  }, [spinning, result, items, sliceDeg]);
+  }, [spinning, result, spinSeq, items, sliceDeg]);
 
   const onTransitionEnd = () => {
     // Normalize rotation to 0..360 (no animation jump)
