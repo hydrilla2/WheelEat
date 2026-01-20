@@ -394,12 +394,14 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 selected={selectedBudgets}
                 onChange={setSelectedBudgets}
                 onClickSound={playClick}
+                disabled={spinning}
               />
               <CategorySelector
                 selected={selectedCategories}
                 onChange={setSelectedCategories}
                 categories={categories}
                 onClickSound={playClick}
+                disabled={spinning}
               />
             </div>
 

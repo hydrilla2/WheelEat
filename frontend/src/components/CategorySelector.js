@@ -17,8 +17,9 @@ const DEFAULT_CATEGORIES = [
   'Supermarket',
 ];
 
-function CategorySelector({ selected, onChange, categories = DEFAULT_CATEGORIES, onClickSound }) {
+function CategorySelector({ selected, onChange, categories = DEFAULT_CATEGORIES, onClickSound, disabled = false }) {
   const toggleCategory = (category) => {
+    if (disabled) return;
     if (onClickSound) onClickSound();
     if (selected.includes(category)) {
       onChange(selected.filter((c) => c !== category));
@@ -38,6 +39,7 @@ function CategorySelector({ selected, onChange, categories = DEFAULT_CATEGORIES,
             className={`category-chip ${selected.includes(category) ? 'selected' : ''}`}
             onClick={() => toggleCategory(category)}
             type="button"
+            disabled={disabled}
           >
             {category}
             {selected.includes(category) && <span className="checkmark">✓</span>}

@@ -3,8 +3,9 @@ import './CategorySelector.css';
 
 const DEFAULT_BUDGETS = ['Below RM20', 'RM20 - RM40', 'Above RM40'];
 
-function BudgetSelector({ selected, onChange, budgets = DEFAULT_BUDGETS, onClickSound }) {
+function BudgetSelector({ selected, onChange, budgets = DEFAULT_BUDGETS, onClickSound, disabled = false }) {
   const toggleBudget = (budget) => {
+    if (disabled) return;
     if (onClickSound) onClickSound();
     if (selected.includes(budget)) {
       onChange(selected.filter((b) => b !== budget));
@@ -24,6 +25,7 @@ function BudgetSelector({ selected, onChange, budgets = DEFAULT_BUDGETS, onClick
             className={`category-chip ${selected.includes(budget) ? 'selected' : ''}`}
             onClick={() => toggleBudget(budget)}
             type="button"
+            disabled={disabled}
           >
             {budget}
             {selected.includes(budget) && <span className="checkmark">✓</span>}
