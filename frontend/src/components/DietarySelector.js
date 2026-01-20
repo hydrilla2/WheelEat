@@ -6,7 +6,7 @@ const DIETARY_OPTIONS = [
   { value: 'halal_pork_free', label: 'Halal & Pork Free' },
 ];
 
-function DietarySelector({ value, onChange, onClickSound }) {
+function DietarySelector({ value, onChange, onClickSound, disabled = false }) {
   return (
     <div className="dietary-selector">
       <label className="selector-label">Dietary Needs</label>
@@ -16,10 +16,12 @@ function DietarySelector({ value, onChange, onClickSound }) {
             key={option.value}
             className={`dietary-option ${value === option.value ? 'active' : ''}`}
             onClick={() => {
+              if (disabled) return;
               if (onClickSound) onClickSound();
               onChange(option.value);
             }}
             type="button"
+            disabled={disabled}
           >
             {option.label}
           </button>

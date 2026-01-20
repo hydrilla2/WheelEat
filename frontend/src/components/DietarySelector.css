@@ -36,6 +36,18 @@
   transform: translateY(-2px);
 }
 
+.dietary-option:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+}
+
+.dietary-option:disabled:hover {
+  border-color: #e0e0e0;
+  color: #666;
+  transform: none;
+}
+
 .dietary-option.active {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;

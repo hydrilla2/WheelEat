@@ -389,6 +389,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 value={dietaryNeed}
                 onChange={setDietaryNeed}
                 onClickSound={playClick}
+                disabled={spinning}
               />
               <BudgetSelector
                 selected={selectedBudgets}
