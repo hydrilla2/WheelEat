@@ -1,7 +1,7 @@
 // Restaurant data for multiple malls
 // Format: [Restaurant Name, Unit Number, Floor, Category, Halal Status]
 
-import { budgetTierForPriceRange, getPriceRange } from './priceRanges.js';
+import { budgetTierForPriceRange, budgetTiersForPriceRange, getPriceRange } from './priceRanges.js';
 
 export const MALL_RESTAURANTS = {
   sunway_square: [
@@ -196,6 +196,18 @@ export function getBudgetTierForRestaurant(restaurantName, fallbackCategory) {
   return tier || getBudgetTier(fallbackCategory);
 }
 
+function matchesBudgetFilterForRestaurant(restaurantName, fallbackCategory, budgetSet) {
+  if (!budgetSet) return true;
+  const pr = getPriceRange(restaurantName);
+  if (pr) {
+    const tiers = budgetTiersForPriceRange(pr);
+    if (tiers.some((t) => budgetSet.has(t))) return true;
+    // If we have a price range but it overlaps none (unexpected), fall back.
+  }
+  const tier = getBudgetTierForRestaurant(restaurantName, fallbackCategory);
+  return budgetSet.has(tier);
+}
+
 export function getRestaurantsByCategories(categories, mallId = "sunway_square", dietaryNeed = "any", budgets = []) {
   const restaurants = getRestaurantsByMall(mallId);
   const matchingRestaurants = [];
@@ -210,7 +222,7 @@ export function getRestaurantsByCategories(categories, mallId = "sunway_square",
     }
 
     const budgetTier = getBudgetTierForRestaurant(name, category);
-    if (budgetSet && !budgetSet.has(budgetTier)) {
+    if (!matchesBudgetFilterForRestaurant(name, category, budgetSet)) {
       continue;
     }
     

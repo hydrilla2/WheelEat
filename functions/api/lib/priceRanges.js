@@ -71,23 +71,47 @@ export function getPriceRange(name) {
   return PRICE_RANGES[String(name || '')] || null;
 }
 
-function parseUpperBound(range) {
+function parseRange(range) {
   // Supports formats: RM1-20, RM20-40, RM40-60, RM20-80+, RM40-80+
   const s = String(range || '');
   const plus = s.includes('+');
-  const m = s.match(/RM\s*\d+\s*-\s*(\d+)/i);
-  if (!m) return { upper: null, plus };
-  const upper = Number(m[1]);
-  return { upper: Number.isFinite(upper) ? upper : null, plus };
+  const m = s.match(/RM\s*(\d+)\s*-\s*(\d+)/i);
+  if (!m) return { low: null, high: null, plus };
+  const low = Number(m[1]);
+  const high = Number(m[2]);
+  return {
+    low: Number.isFinite(low) ? low : null,
+    high: Number.isFinite(high) ? high : null,
+    plus,
+  };
 }
 
 export function budgetTierForPriceRange(range) {
-  const { upper, plus } = parseUpperBound(range);
+  // Primary display tier (single label) based on upper bound.
+  const { high, plus } = parseRange(range);
   if (plus) return 'Above RM40';
-  if (upper === null) return null;
-  if (upper <= 20) return 'Below RM20';
-  if (upper <= 40) return 'RM20 - RM40';
+  if (high === null) return null;
+  if (high <= 20) return 'Below RM20';
+  if (high <= 40) return 'RM20 - RM40';
   return 'Above RM40';
+}
+
+export function budgetTiersForPriceRange(range) {
+  // Matching tiers (can be multiple) based on overlap.
+  const { low, high, plus } = parseRange(range);
+  if (low === null) return [];
+  const upper = plus ? Number.POSITIVE_INFINITY : high;
+  if (!Number.isFinite(upper)) return [];
+
+  const tiers = [
+    { label: 'Below RM20', min: 0, max: 20 },
+    { label: 'RM20 - RM40', min: 20, max: 40 },
+    { label: 'Above RM40', min: 40, max: Number.POSITIVE_INFINITY },
+  ];
+
+  return tiers
+    .filter((t) => low <= t.max && upper >= t.min)
+    .map((t) => t.label);
 }
 
 
