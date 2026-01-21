@@ -7,10 +7,23 @@ import DietarySelector from './components/DietarySelector';
 import MallSelector from './components/MallSelector';
 import ResultModal from './components/ResultModal';
 import Login from './components/Login';
-import { fetchMalls, fetchRestaurants, recordSpin, trackPageView } from './services/api';
+import {
+  fetchMalls,
+  fetchRestaurants,
+  recordSpin,
+  trackPageView,
+  claimRestaurantVoucher,
+  fetchUserVouchers,
+  fetchVoucherStocks,
+} from './services/api';
 import Leaderboard from './components/Leaderboard';
+import VoucherOfferModal from './components/VoucherOfferModal';
+import VoucherWalletModal from './components/VoucherWalletModal';
+import AdminVouchers from './components/AdminVouchers';
 import { useSessionTracker } from './hooks/useSessionTracker';
 import { getEffectiveUserId } from './utils/userId';
+import { getPriceRange } from './data/priceRanges';
+import { getGoogleMapsLink } from './data/googleMapsLinks';
 
 function MenuIcon() {
   return (
@@ -45,12 +58,41 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const spinTimeoutRef = useRef(0);
   const spinShowRef = useRef(0);
   const spinHardStopRef = useRef(0);
-  const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard'
+  const [activeView, setActiveView] = useState('wheel'); // 'wheel' | 'leaderboard' | 'admin'
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButtonRef = useRef(null);
   const menuRef = useRef(null);
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
+
+  // Restaurant of the day (spotlight)
+  const [showRestaurantList, setShowRestaurantList] = useState(false);
+  const [spotlightIndex, setSpotlightIndex] = useState(0);
+  const [spotlightList, setSpotlightList] = useState([]);
+  const [showFeaturedDetail, setShowFeaturedDetail] = useState(false);
+  const [featuredDetail, setFeaturedDetail] = useState(null);
+
+  // Vouchers
+  const [vouchers, setVouchers] = useState([]);
+  const [showVoucherWallet, setShowVoucherWallet] = useState(false);
+  const [showVoucherOffer, setShowVoucherOffer] = useState(false);
+  const [pendingVoucher, setPendingVoucher] = useState(null);
+  const [voucherStockByRestaurant, setVoucherStockByRestaurant] = useState({});
+
+  const promoVouchers = useMemo(
+    () => [{ value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 }],
+    []
+  );
+
+  const effectiveUserId = useMemo(() => getEffectiveUserId(user), [user]);
+  const isGuest = useMemo(() => !user || user.loginType === 'guest', [user]);
+  const isAdmin = useMemo(() => {
+    const email = String(user?.email || '').toLowerCase();
+    return (
+      user?.loginType === 'google' &&
+      (email === 'ybtan6666@gmail.com' || email === 'zixiuong@gmail.com' || email === 'zkho0011@student.monash.edu')
+    );
+  }, [user]);
 
   // Close header menu on outside click / escape
   useEffect(() => {
@@ -202,6 +244,69 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     });
   }, [restaurantsCache, selectedCategories, selectedBudgets, dietaryNeed]);
 
+  // =========================
+  // Vouchers + Restaurant of the day
+  // =========================
+
+  const refreshVouchers = useCallback(async () => {
+    try {
+      const data = await fetchUserVouchers(effectiveUserId);
+      const active = Array.isArray(data?.vouchers)
+        ? data.vouchers.filter((v) => v.status === 'active').map((v) => ({ ...v, logo: v.merchant_logo || v.logo || null }))
+        : [];
+      setVouchers(active);
+    } catch (e) {
+      console.debug('Failed to load vouchers:', e);
+      setVouchers([]);
+    }
+  }, [effectiveUserId]);
+
+  const refreshVoucherStocks = useCallback(async (merchantNames) => {
+    try {
+      const names = Array.isArray(merchantNames) ? merchantNames.filter(Boolean) : [];
+      if (names.length === 0) return;
+      const data = await fetchVoucherStocks(names);
+      const stocks = data?.stocks || {};
+      setVoucherStockByRestaurant((prev) => ({ ...prev, ...stocks }));
+    } catch (e) {
+      console.debug('Failed to load voucher stocks:', e);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshVouchers();
+  }, [refreshVouchers]);
+
+  useEffect(() => {
+    if (!showVoucherWallet) return;
+    refreshVouchers();
+  }, [showVoucherWallet, refreshVouchers]);
+
+  // Build the spotlight list from cached restaurants.
+  useEffect(() => {
+    if (!restaurantsCache.length) {
+      setSpotlightList([]);
+      setSpotlightIndex(0);
+      return;
+    }
+    const featuredPrimary = restaurantsCache.find((r) => r?.name === 'Ba Shu Jia Yan');
+    const copy = [featuredPrimary].filter(Boolean);
+    if (copy.length === 0) copy.push(...restaurantsCache);
+    setSpotlightList(copy.slice(0, 1)); // only show one for "restaurant of the day"
+    setSpotlightIndex(0);
+  }, [restaurantsCache, mallId]);
+
+  // Load voucher stock counts when Restaurant-of-the-day UI is opened.
+  useEffect(() => {
+    if (!showRestaurantList) return;
+    refreshVoucherStocks(spotlightList.map((r) => r?.name));
+  }, [showRestaurantList, spotlightList, refreshVoucherStocks]);
+
+  useEffect(() => {
+    if (!showFeaturedDetail || !featuredDetail?.name) return;
+    refreshVoucherStocks([featuredDetail.name]);
+  }, [showFeaturedDetail, featuredDetail, refreshVoucherStocks]);
+
   const handleSpin = async () => {
     // Guard: prevent concurrent spins.
     if (spinning) return;
@@ -297,6 +402,88 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     setResult(null);
   };
 
+  const handleDeclineVoucher = () => {
+    setShowVoucherOffer(false);
+    setPendingVoucher(null);
+  };
+
+  const handleKeepVoucher = async () => {
+    const merchantName = pendingVoucher?.merchant_name;
+    if (!merchantName) {
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      return;
+    }
+
+    if (isGuest) {
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      onShowLogin();
+      alert('Please sign in with Google to claim this voucher.');
+      return;
+    }
+
+    const currentStock = voucherStockByRestaurant?.[merchantName]?.remaining_qty;
+    const hasActiveVoucher = vouchers.some((v) => String(v.merchant_name) === String(merchantName));
+    if (currentStock !== undefined && currentStock !== null && Number(currentStock) <= 0) {
+      alert('Sorry, there is no voucher left.');
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      return;
+    }
+    if (hasActiveVoucher) {
+      alert('You already claimed this voucher.');
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+      return;
+    }
+
+    const merchantLogo = pendingVoucher?.merchant_logo || pendingVoucher?.logo || null;
+    const valueRm = pendingVoucher?.value_rm;
+    const minSpendRm = pendingVoucher?.min_spend_rm;
+
+    try {
+      const out = await claimRestaurantVoucher({
+        userId: effectiveUserId,
+        merchantName,
+        merchantLogo,
+        valueRm,
+        minSpendRm,
+      });
+
+      if (out?.won) {
+        await refreshVouchers();
+        if (out?.remainingQty !== undefined) {
+          setVoucherStockByRestaurant((prev) => ({
+            ...prev,
+            [merchantName]: { ...(prev?.[merchantName] || {}), remaining_qty: Number(out.remainingQty) },
+          }));
+        } else {
+          refreshVoucherStocks([merchantName]);
+        }
+        setShowVoucherOffer(false);
+        setPendingVoucher(null);
+        setShowVoucherWallet(true);
+      } else if (out?.reason === 'sold_out') {
+        alert('Sorry, this restaurant voucher is sold out.');
+        setShowVoucherOffer(false);
+        setPendingVoucher(null);
+      } else if (out?.reason === 'already_claimed') {
+        alert('You already claimed this voucher.');
+        setShowVoucherOffer(false);
+        setPendingVoucher(null);
+      } else {
+        alert('No voucher won this time.');
+        setShowVoucherOffer(false);
+        setPendingVoucher(null);
+      }
+    } catch (e) {
+      alert(e?.message || 'Failed to claim voucher');
+      setShowVoucherOffer(false);
+      setPendingVoucher(null);
+    }
+  };
+
   return (
     <div className="App">
       <div className="container">
@@ -355,6 +542,38 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                     <span className="header-menu-label">Leaderboard</span>
                   </button>
 
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className="header-menu-item"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      setShowVoucherWallet(true);
+                    }}
+                  >
+                    <span className="header-menu-check" aria-hidden="true" />
+                    <span className="header-menu-label">
+                      Vouchers {vouchers.length > 0 ? <span className="header-menu-badge">{vouchers.length}</span> : null}
+                    </span>
+                  </button>
+
+                  {isAdmin ? (
+                    <button
+                      type="button"
+                      role="menuitem"
+                      className={`header-menu-item ${activeView === 'admin' ? 'active' : ''}`}
+                      onClick={() => {
+                        setActiveView('admin');
+                        setMenuOpen(false);
+                      }}
+                    >
+                      <span className="header-menu-check" aria-hidden="true">
+                        {activeView === 'admin' ? '✓' : ''}
+                      </span>
+                      <span className="header-menu-label">Admin</span>
+                    </button>
+                  ) : null}
+
                   <div className="header-menu-divider" role="separator" />
 
                   <button
@@ -385,6 +604,45 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 malls={malls}
                 loading={mallsLoading}
               />
+              <div className="spotlight-panel">
+                <div className="spotlight-header">
+                  <span className="spotlight-title">Restaurant of the day</span>
+                  <button type="button" className="spotlight-viewall" onClick={() => setShowRestaurantList(true)}>
+                    View all
+                  </button>
+                </div>
+                <button
+                  type="button"
+                  className="spotlight-card"
+                  onClick={() => setShowRestaurantList(true)}
+                  aria-label="Open featured restaurants"
+                >
+                  {spotlightList.length > 0 ? (
+                    <div className="spotlight-content">
+                      <div className="spotlight-logo">
+                        {spotlightList[spotlightIndex]?.logo ? (
+                          <img
+                            src={`/${spotlightList[spotlightIndex]?.logo}`}
+                            alt={spotlightList[spotlightIndex]?.name}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="spotlight-details">
+                        <div className="spotlight-name">{spotlightList[spotlightIndex]?.name}</div>
+                        <div className="spotlight-meta">
+                          {spotlightList[spotlightIndex]?.category || 'Category'}
+                          {spotlightList[spotlightIndex]?.unit ? ` | ${spotlightList[spotlightIndex]?.unit}` : ''}
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="spotlight-empty">Loading restaurants...</div>
+                  )}
+                </button>
+              </div>
               <DietarySelector
                 value={dietaryNeed}
                 onChange={setDietaryNeed}
@@ -428,7 +686,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               )}
             </div>
           </div>
-        ) : (
+        ) : activeView === 'leaderboard' ? (
           <div style={{ marginTop: '8px' }}>
             <MallSelector
               value={mallId}
@@ -441,6 +699,10 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
               mallName={malls.find((m) => m.id === mallId)?.display_name || malls.find((m) => m.id === mallId)?.name}
               categories={categories}
             />
+          </div>
+        ) : (
+          <div style={{ marginTop: '8px' }}>
+            <AdminVouchers user={user} />
           </div>
         )}
 
@@ -470,6 +732,229 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
           onSpinAgain={handleSpin}
         />
       )}
+
+      {showRestaurantList ? (
+        <div className="restaurant-list-overlay" onClick={() => setShowRestaurantList(false)} role="presentation">
+          <div className="restaurant-list-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="restaurant-list-close"
+              onClick={() => setShowRestaurantList(false)}
+              aria-label="Close restaurant list"
+            >
+              X
+            </button>
+            <h2>Restaurant of the day</h2>
+            <div className="restaurant-list-count">{spotlightList.length} total</div>
+
+            <div className="restaurant-list-scroll">
+              {spotlightList.map((r) => {
+                const vouchersForRestaurant = promoVouchers.filter((voucher) => voucher.restaurant === r.name);
+                const dynamicLeft =
+                  voucherStockByRestaurant?.[r.name]?.remaining_qty !== undefined
+                    ? voucherStockByRestaurant[r.name].remaining_qty
+                    : null;
+
+                return (
+                  <div key={r.name} className="featured-bundle">
+                    <button
+                      type="button"
+                      className="restaurant-list-row"
+                      onClick={() => {
+                        setFeaturedDetail(r);
+                        setShowFeaturedDetail(true);
+                      }}
+                    >
+                      <div className="restaurant-list-logo">
+                        {r.logo ? (
+                          <img
+                            src={`/${r.logo}`}
+                            alt={r.name}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                            }}
+                          />
+                        ) : null}
+                      </div>
+                      <div className="restaurant-list-details">
+                        <div className="restaurant-list-name">{r.name}</div>
+                        <div className="restaurant-list-meta">
+                          {r.category || 'Category'}
+                          {r.unit ? ` | ${r.unit}` : ''}
+                          {r.floor ? ` | ${r.floor}` : ''}
+                        </div>
+                      </div>
+                    </button>
+
+                    {vouchersForRestaurant.length > 0 ? (
+                      <div className="voucher-card-grid">
+                        {vouchersForRestaurant.map((voucher, index) => (
+                          <div key={`${r.name}-voucher-${index}`} className="voucher-card">
+                            <div className="voucher-card-value">{voucher.value}</div>
+                            <div className="voucher-card-info">
+                              <div className="voucher-card-min">
+                                {voucher.minSpend} in {voucher.restaurant}
+                              </div>
+                              <div className="voucher-card-left">
+                                {(dynamicLeft !== null ? dynamicLeft : voucher.left)} vouchers left
+                              </div>
+                            </div>
+                            <button
+                              type="button"
+                              className="voucher-card-cta"
+                              onClick={() => {
+                                const leftNow = dynamicLeft !== null ? Number(dynamicLeft) : Number(voucher.left);
+                                if (Number.isFinite(leftNow) && leftNow <= 0) {
+                                  alert('Sorry, there is no voucher left.');
+                                  return;
+                                }
+                                if (!isGuest && vouchers.some((vv) => String(vv.merchant_name) === String(r.name))) {
+                                  alert('You already claimed this voucher.');
+                                  return;
+                                }
+                                const valueRm = Number(String(voucher.value || '').replace(/[^\d]/g, '')) || 5;
+                                const minSpendRm = Number(String(voucher.minSpend || '').replace(/[^\d]/g, '')) || 30;
+                                setPendingVoucher({
+                                  merchant_name: r.name,
+                                  merchant_logo: r.logo || null,
+                                  value_rm: valueRm,
+                                  min_spend_rm: minSpendRm,
+                                });
+                                setShowVoucherOffer(true);
+                              }}
+                            >
+                              {(() => {
+                                const leftNow = dynamicLeft !== null ? Number(dynamicLeft) : Number(voucher.left);
+                                if (Number.isFinite(leftNow) && leftNow <= 0) return 'Sold out';
+                                if (!isGuest && vouchers.some((vv) => String(vv.merchant_name) === String(r.name))) return 'Already claimed';
+                                return 'Collect voucher';
+                              })()}
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showFeaturedDetail && featuredDetail ? (
+        <div className="restaurant-detail-overlay" onClick={() => setShowFeaturedDetail(false)} role="presentation">
+          <div className="restaurant-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <button
+              type="button"
+              className="restaurant-detail-close"
+              onClick={() => setShowFeaturedDetail(false)}
+              aria-label="Close restaurant details"
+            >
+              X
+            </button>
+            <div className="restaurant-detail-logo">
+              {featuredDetail.logo ? (
+                <img
+                  src={`/${featuredDetail.logo}`}
+                  alt={featuredDetail.name}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : null}
+            </div>
+            <div className="restaurant-detail-title">You got:</div>
+            <h3>{featuredDetail.name}</h3>
+            <div className="restaurant-detail-info">
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Price range:</span>
+                <span className="restaurant-detail-value">{getPriceRange(featuredDetail.name)}</span>
+              </div>
+              <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Give me a review:</span>
+                {getGoogleMapsLink(featuredDetail.name) ? (
+                  <a
+                    className="restaurant-detail-link"
+                    href={getGoogleMapsLink(featuredDetail.name)}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Google Maps
+                  </a>
+                ) : (
+                  <button type="button" className="restaurant-detail-link" disabled>
+                    Open Google Maps
+                  </button>
+                )}
+              </div>
+            </div>
+            <div className="restaurant-detail-vouchers">
+              <div className="restaurant-detail-promo-title">Collect voucher</div>
+              <div className="voucher-card-grid">
+                {promoVouchers
+                  .filter((voucher) => voucher.restaurant === featuredDetail.name)
+                  .map((voucher, index) => (
+                    <div key={`voucher-${index}`} className="voucher-card">
+                      <div className="voucher-card-value">{voucher.value}</div>
+                      <div className="voucher-card-info">
+                        <div className="voucher-card-min">
+                          {voucher.minSpend} in {voucher.restaurant}
+                        </div>
+                        <div className="voucher-card-left">
+                          {(voucherStockByRestaurant?.[featuredDetail.name]?.remaining_qty !== undefined
+                            ? voucherStockByRestaurant[featuredDetail.name].remaining_qty
+                            : voucher.left)}{' '}
+                          vouchers left
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        className="voucher-card-cta"
+                        onClick={() => {
+                          const dynamicLeft = voucherStockByRestaurant?.[featuredDetail.name]?.remaining_qty;
+                          const leftNow = dynamicLeft !== undefined ? Number(dynamicLeft) : Number(voucher.left);
+                          if (Number.isFinite(leftNow) && leftNow <= 0) {
+                            alert('Sorry, there is no voucher left.');
+                            return;
+                          }
+                          if (!isGuest && vouchers.some((vv) => String(vv.merchant_name) === String(featuredDetail.name))) {
+                            alert('You already claimed this voucher.');
+                            return;
+                          }
+                          const valueRm = Number(String(voucher.value || '').replace(/[^\d]/g, '')) || 5;
+                          const minSpendRm = Number(String(voucher.minSpend || '').replace(/[^\d]/g, '')) || 30;
+                          setPendingVoucher({
+                            merchant_name: featuredDetail.name,
+                            merchant_logo: featuredDetail.logo || null,
+                            value_rm: valueRm,
+                            min_spend_rm: minSpendRm,
+                          });
+                          setShowVoucherOffer(true);
+                        }}
+                      >
+                        {(() => {
+                          const dynamicLeft = voucherStockByRestaurant?.[featuredDetail.name]?.remaining_qty;
+                          const leftNow = dynamicLeft !== undefined ? Number(dynamicLeft) : Number(voucher.left);
+                          if (Number.isFinite(leftNow) && leftNow <= 0) return 'Sold out';
+                          if (!isGuest && vouchers.some((vv) => String(vv.merchant_name) === String(featuredDetail.name)))
+                            return 'Already claimed';
+                          return 'Collect voucher';
+                        })()}
+                      </button>
+                    </div>
+                  ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : null}
+
+      {showVoucherOffer ? (
+        <VoucherOfferModal voucher={pendingVoucher} onAccept={handleKeepVoucher} onDecline={handleDeclineVoucher} user={user} />
+      ) : null}
+
+      {showVoucherWallet ? <VoucherWalletModal vouchers={vouchers} onClose={() => setShowVoucherWallet(false)} /> : null}
     </div>
   );
 }

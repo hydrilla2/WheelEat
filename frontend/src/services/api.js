@@ -329,4 +329,113 @@ export async function getSessionStats() {
   return await fetchJson(url);
 }
 
+// =========================
+// Voucher System (per restaurant)
+// =========================
+
+export async function claimRestaurantVoucher({ userId, merchantName, merchantLogo, valueRm, minSpendRm }) {
+  const url = buildUrl('/api/vouchers/spin');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      user_id: userId,
+      merchant_name: merchantName,
+      merchant_logo: merchantLogo,
+      value_rm: valueRm,
+      min_spend_rm: minSpendRm,
+    }),
+  });
+}
+
+export async function fetchUserVouchers(userId) {
+  const url = buildUrl('/api/vouchers', { user_id: userId });
+  return await fetchJson(url);
+}
+
+export async function fetchVoucherStocks(merchantNames) {
+  const url = buildUrl('/api/vouchers/stocks', {
+    merchant_names: JSON.stringify(merchantNames || []),
+    t: Date.now(), // cache buster
+  });
+  return await fetchJson(url, { cache: 'no-store' });
+}
+
+export async function removeUserVoucher({ userId, userVoucherId }) {
+  const url = buildUrl('/api/vouchers/remove');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, user_voucher_id: userVoucherId }),
+  });
+}
+
+export async function markVoucherUsed({ userId, userVoucherId }) {
+  const url = buildUrl('/api/vouchers/use');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ user_id: userId, user_voucher_id: userVoucherId }),
+  });
+}
+
+export async function transferVouchers({ guestUserId, googleUserId }) {
+  const url = buildUrl('/api/vouchers/transfer');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ guest_user_id: guestUserId, google_user_id: googleUserId }),
+  });
+}
+
+// =========================
+// Admin (Google access token)
+// =========================
+
+function withBearer(token) {
+  const t = String(token || '').trim();
+  if (!t) throw new Error('Auth token is required');
+  return { Authorization: `Bearer ${t}` };
+}
+
+export async function adminFetchUserVouchers({ accessToken, status, userId, q, limit = 200, offset = 0 }) {
+  const url = buildUrl('/api/admin/vouchers', {
+    status,
+    user_id: userId,
+    q,
+    limit,
+    offset,
+  });
+  return await fetchJson(url, {
+    headers: withBearer(accessToken),
+  });
+}
+
+export async function adminRevokeVoucher({ accessToken, userVoucherId }) {
+  const url = buildUrl('/api/admin/vouchers/revoke');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...withBearer(accessToken) },
+    body: JSON.stringify({ user_voucher_id: userVoucherId }),
+  });
+}
+
+export async function adminDeleteVoucher({ accessToken, userVoucherId }) {
+  const url = buildUrl('/api/admin/vouchers/delete');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...withBearer(accessToken) },
+    body: JSON.stringify({ user_voucher_id: userVoucherId }),
+  });
+}
+
+export async function adminRestoreVoucher({ accessToken, userVoucherId }) {
+  const url = buildUrl('/api/admin/vouchers/restore');
+  return await fetchJson(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', ...withBearer(accessToken) },
+    body: JSON.stringify({ user_voucher_id: userVoucherId }),
+  });
+}
+
 
