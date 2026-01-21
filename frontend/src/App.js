@@ -212,16 +212,16 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
 
     setRestaurantsLoading(true);
     fetchRestaurants({ mallId, dietaryNeed: 'any' })
-      .then((data) => {
+        .then((data) => {
         const list = Array.isArray(data?.restaurants) ? data.restaurants : [];
         setRestaurantsCache(list);
         const cats = Array.from(new Set(list.map((r) => r?.category).filter(Boolean))).sort();
         setCategories(cats);
-      })
-      .catch((err) => {
+        })
+        .catch((err) => {
         console.error('Failed to load restaurants cache:', err);
         setRestaurantsCache([]);
-        setCategories([]);
+          setCategories([]);
       })
       .finally(() => setRestaurantsLoading(false));
   }, [mallId, user?.id]);
@@ -370,7 +370,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     const HARD_STOP_MS = SPIN_ANIM_MS + 2000; // never allow infinite spin
 
     spinTimeoutRef.current = setTimeout(() => {
-      setSpinning(false);
+        setSpinning(false);
       spinShowRef.current = setTimeout(() => setShowResult(true), SHOW_DELAY_MS);
     }, SPIN_ANIM_MS);
 
@@ -378,7 +378,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     spinHardStopRef.current = setTimeout(() => {
       setSpinning((prev) => {
         if (!prev) return prev;
-        setShowResult(true);
+          setShowResult(true);
         return false;
       });
     }, HARD_STOP_MS);
@@ -504,6 +504,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 <span className="header-menu-icon" aria-hidden="true">
                   <MenuIcon />
                 </span>
+                {vouchers.length > 0 ? <span className="header-menu-dot" aria-hidden="true" /> : null}
               </button>
 
               {menuOpen ? (
@@ -632,10 +633,10 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                       </div>
                       <div className="spotlight-details">
                         <div className="spotlight-name">{spotlightList[spotlightIndex]?.name}</div>
-                        <div className="spotlight-meta">
-                          {spotlightList[spotlightIndex]?.category || 'Category'}
+                      <div className="spotlight-meta">
+                        {spotlightList[spotlightIndex]?.category || 'Category'}
                           {spotlightList[spotlightIndex]?.unit ? ` | ${spotlightList[spotlightIndex]?.unit}` : ''}
-                        </div>
+                      </div>
                       </div>
                     </div>
                   ) : (
@@ -777,12 +778,12 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                         ) : null}
                       </div>
                       <div className="restaurant-list-details">
-                        <div className="restaurant-list-name">{r.name}</div>
-                        <div className="restaurant-list-meta">
-                          {r.category || 'Category'}
-                          {r.unit ? ` | ${r.unit}` : ''}
-                          {r.floor ? ` | ${r.floor}` : ''}
-                        </div>
+                  <div className="restaurant-list-name">{r.name}</div>
+                  <div className="restaurant-list-meta">
+                    {r.category || 'Category'}
+                    {r.unit ? ` | ${r.unit}` : ''}
+                    {r.floor ? ` | ${r.floor}` : ''}
+                  </div>
                       </div>
                     </button>
 
@@ -835,9 +836,9 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                                 return 'Collect voucher';
                               })()}
                             </button>
-                          </div>
-                        ))}
-                      </div>
+                </div>
+              ))}
+            </div>
                     ) : null}
                   </div>
                 );
