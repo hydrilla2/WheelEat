@@ -468,7 +468,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
         alert('Sorry, this restaurant voucher is sold out.');
         setShowVoucherOffer(false);
         setPendingVoucher(null);
-      } else if (out?.reason === 'already_claimed') {
+      } else if (out?.reason === 'already_has_voucher' || out?.reason === 'already_claimed') {
         alert('You already claimed this voucher.');
         setShowVoucherOffer(false);
         setPendingVoucher(null);
@@ -803,6 +803,11 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                               type="button"
                               className="voucher-card-cta"
                               onClick={() => {
+                                if (isGuest) {
+                                  alert('Please sign in with Google to claim this voucher.');
+                                  onShowLogin();
+                                  return;
+                                }
                                 const leftNow = dynamicLeft !== null ? Number(dynamicLeft) : Number(voucher.left);
                                 if (Number.isFinite(leftNow) && leftNow <= 0) {
                                   alert('Sorry, there is no voucher left.');
@@ -912,6 +917,11 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                         type="button"
                         className="voucher-card-cta"
                         onClick={() => {
+                          if (isGuest) {
+                            alert('Please sign in with Google to claim this voucher.');
+                            onShowLogin();
+                            return;
+                          }
                           const dynamicLeft = voucherStockByRestaurant?.[featuredDetail.name]?.remaining_qty;
                           const leftNow = dynamicLeft !== undefined ? Number(dynamicLeft) : Number(voucher.left);
                           if (Number.isFinite(leftNow) && leftNow <= 0) {
