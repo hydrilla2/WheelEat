@@ -201,7 +201,8 @@ export function getRestaurantsByCategories(categories, mallId = "sunway_square",
       continue;
     }
 
-    const budgetTier = getBudgetTier(category);
+    // Override budget tier for specific restaurants when category-based tiers are not accurate.
+    const budgetTier = name === "Ba Shu Jia Yan" ? "Above RM40" : getBudgetTier(category);
     if (budgetSet && !budgetSet.has(budgetTier)) {
       continue;
     }

@@ -878,6 +878,23 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 <span className="restaurant-detail-value">{getPriceRange(featuredDetail.name)}</span>
               </div>
               <div className="restaurant-detail-row">
+                <span className="restaurant-detail-label">Visit Instagram:</span>
+                {featuredDetail.name === 'Ba Shu Jia Yan' ? (
+                  <a
+                    className="restaurant-detail-link"
+                    href="https://www.instagram.com/bashujiayansunway/"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Open Instagram
+                  </a>
+                ) : (
+                  <button type="button" className="restaurant-detail-link" disabled>
+                    Open Instagram
+                  </button>
+                )}
+              </div>
+              <div className="restaurant-detail-row">
                 <span className="restaurant-detail-label">Give me a review:</span>
                 {getGoogleMapsLink(featuredDetail.name) ? (
                   <a

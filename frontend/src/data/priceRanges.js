@@ -3,7 +3,7 @@ export const priceRanges = {
   '103 Coffee': 'RM20-40',
   "A'Decade": 'RM20-40',
   'Armoury Steakhouse': 'RM20-80+',
-  'Ba Shu Jia Yan': 'RM40-80+',
+  'Ba Shu Jia Yan': 'RM40-60',
   'Beutea': 'RM1-20',
   'Black Canyon': 'RM20-40',
   'Bread History': 'RM1-20',

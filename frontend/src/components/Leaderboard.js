@@ -3,6 +3,7 @@ import './Leaderboard.css';
 import { fetchLeaderboardBatched } from '../services/api';
 import { sortLeaderboardRows } from '../utils/leaderboard';
 import { getRestaurantLocation } from '../data/restaurantLocations';
+import { getPriceRange } from '../data/priceRanges';
 import CategorySelector from './CategorySelector';
 import DietarySelector from './DietarySelector';
 import BudgetSelector from './BudgetSelector';
@@ -196,6 +197,7 @@ export default function Leaderboard({ mallId, mallName, categories }) {
                 </p>
                 <div className="restaurant-meta">
                   <span className="meta-pill">{r.category || 'Unknown'}</span>
+                  <span className="meta-pill">{getPriceRange(r.name)}</span>
                   {r.isHalal ? <span className="meta-pill meta-pill-green">Halal &amp; Pork Free</span> : null}
                 </div>
               </div>
