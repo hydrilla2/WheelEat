@@ -3,7 +3,7 @@ import './Leaderboard.css';
 import { fetchLeaderboardBatched } from '../services/api';
 import { sortLeaderboardRows } from '../utils/leaderboard';
 import { getRestaurantLocation } from '../data/restaurantLocations';
-import { getPriceRange } from '../data/priceRanges';
+import { budgetTiersForRestaurant, getPriceRange } from '../data/priceRanges';
 import CategorySelector from './CategorySelector';
 import DietarySelector from './DietarySelector';
 import BudgetSelector from './BudgetSelector';
@@ -99,7 +99,13 @@ export default function Leaderboard({ mallId, mallName, categories }) {
     const src = Array.isArray(rows) ? rows : [];
     return src.filter((r) => {
       const catOk = cats.length === 0 ? true : cats.includes(r?.category);
-      const budgetOk = budgets.length === 0 ? true : budgets.includes(r?.budget);
+      const budgetOk =
+        budgets.length === 0
+          ? true
+          : (() => {
+              const tiers = budgetTiersForRestaurant(r?.name);
+              return tiers.length > 0 ? tiers.some((t) => budgets.includes(t)) : budgets.includes(r?.budget);
+            })();
       if (!budgetOk) return false;
       if (!catOk) return false;
       if (dietary === 'halal_pork_free') {

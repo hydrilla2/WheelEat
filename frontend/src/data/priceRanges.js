@@ -68,3 +68,36 @@ export const priceRanges = {
 export const getPriceRange = (restaurantName) => {
   return priceRanges[restaurantName] || 'N/A';
 };
+
+function parseRange(range) {
+  const s = String(range || '');
+  const plus = s.includes('+');
+  const m = s.match(/RM\s*(\d+)\s*-\s*(\d+)/i);
+  if (!m) return { low: null, high: null, plus };
+  const low = Number(m[1]);
+  const high = Number(m[2]);
+  return {
+    low: Number.isFinite(low) ? low : null,
+    high: Number.isFinite(high) ? high : null,
+    plus,
+  };
+}
+
+// Budget tiers for filtering (can be multiple) with strict boundaries:
+// - "Below RM20" matches only if low < 20 (RM1-40 ✅, RM20-40 ❌)
+// - "RM20 - RM40" matches only if the range has values strictly between 20 and 40 (RM1-20 ❌, RM20-40 ✅, RM40-60 ❌)
+// - "Above RM40" matches only if range has values > 40 (RM40-60 ✅, RM20-40 ❌)
+export function budgetTiersForRestaurant(restaurantName) {
+  const range = getPriceRange(restaurantName);
+  if (!range || range === 'N/A') return [];
+  const { low, high, plus } = parseRange(range);
+  if (low === null) return [];
+  const upper = plus ? Number.POSITIVE_INFINITY : high;
+  if (!Number.isFinite(upper)) return [];
+
+  const tiers = [];
+  if (low < 20) tiers.push('Below RM20');
+  if (upper > 20 && low < 40) tiers.push('RM20 - RM40');
+  if (upper > 40) tiers.push('Above RM40');
+  return tiers;
+}

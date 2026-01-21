@@ -22,7 +22,7 @@ import VoucherWalletModal from './components/VoucherWalletModal';
 import AdminVouchers from './components/AdminVouchers';
 import { useSessionTracker } from './hooks/useSessionTracker';
 import { getEffectiveUserId } from './utils/userId';
-import { getPriceRange } from './data/priceRanges';
+import { budgetTiersForRestaurant, getPriceRange } from './data/priceRanges';
 import { getGoogleMapsLink } from './data/googleMapsLinks';
 
 function MenuIcon() {
@@ -238,7 +238,12 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     return list.filter((r) => {
       if (!r) return false;
       if (categorySet && !categorySet.has(r.category)) return false;
-      if (budgetSet && !budgetSet.has(r.budget)) return false;
+      if (budgetSet) {
+        const tiers = budgetTiersForRestaurant(r.name);
+        // If we have a known price range, use overlap tiers; else fall back to backend-provided single tier.
+        const ok = tiers.length > 0 ? tiers.some((t) => budgetSet.has(t)) : budgetSet.has(r.budget);
+        if (!ok) return false;
+      }
       if (dietary === 'halal_pork_free' && !r.isHalal) return false;
       return true;
     });
