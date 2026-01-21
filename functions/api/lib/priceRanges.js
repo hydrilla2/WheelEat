@@ -111,8 +111,12 @@ export function budgetTiersForPriceRange(range) {
   // Below RM20: any values strictly below 20
   if (low < 20) out.push('Below RM20');
 
-  // RM20 - RM40: intersects [20, 40] (inclusive)
-  if (upper >= 20 && low <= 40) out.push('RM20 - RM40');
+  // RM20 - RM40: includes any value strictly above 20 and strictly below 40
+  // Examples:
+  // - RM1-20  -> does NOT match (upper is not > 20)
+  // - RM20-40 -> matches (upper > 20 and low < 40)
+  // - RM40-60 -> does NOT match (low is not < 40)
+  if (upper > 20 && low < 40) out.push('RM20 - RM40');
 
   // Above RM40: any values strictly above 40
   if (upper > 40) out.push('Above RM40');
