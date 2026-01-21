@@ -97,21 +97,27 @@ export function budgetTierForPriceRange(range) {
 }
 
 export function budgetTiersForPriceRange(range) {
-  // Matching tiers (can be multiple) based on overlap.
+  // Matching tiers (can be multiple) based on overlap, with strict boundaries:
+  // - "Below RM20" matches only if the range includes values < 20 (e.g. RM1-40 ✅, RM20-40 ❌)
+  // - "RM20 - RM40" matches ranges that include any value in [20, 40]
+  // - "Above RM40" matches ranges that include values > 40
   const { low, high, plus } = parseRange(range);
   if (low === null) return [];
   const upper = plus ? Number.POSITIVE_INFINITY : high;
   if (!Number.isFinite(upper)) return [];
 
-  const tiers = [
-    { label: 'Below RM20', min: 0, max: 20 },
-    { label: 'RM20 - RM40', min: 20, max: 40 },
-    { label: 'Above RM40', min: 40, max: Number.POSITIVE_INFINITY },
-  ];
+  const out = [];
 
-  return tiers
-    .filter((t) => low <= t.max && upper >= t.min)
-    .map((t) => t.label);
+  // Below RM20: any values strictly below 20
+  if (low < 20) out.push('Below RM20');
+
+  // RM20 - RM40: intersects [20, 40] (inclusive)
+  if (upper >= 20 && low <= 40) out.push('RM20 - RM40');
+
+  // Above RM40: any values strictly above 40
+  if (upper > 40) out.push('Above RM40');
+
+  return out;
 }
 
 
