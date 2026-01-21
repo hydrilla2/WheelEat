@@ -1,6 +1,8 @@
 // Restaurant data for multiple malls
 // Format: [Restaurant Name, Unit Number, Floor, Category, Halal Status]
 
+import { budgetTierForPriceRange, getPriceRange } from './priceRanges.js';
+
 export const MALL_RESTAURANTS = {
   sunway_square: [
     ["103 Coffee", "L1-07", "LG", "Coffee & Cafes", false],
@@ -188,6 +190,12 @@ export function getBudgetTier(category) {
   }
 }
 
+export function getBudgetTierForRestaurant(restaurantName, fallbackCategory) {
+  const pr = getPriceRange(restaurantName);
+  const tier = pr ? budgetTierForPriceRange(pr) : null;
+  return tier || getBudgetTier(fallbackCategory);
+}
+
 export function getRestaurantsByCategories(categories, mallId = "sunway_square", dietaryNeed = "any", budgets = []) {
   const restaurants = getRestaurantsByMall(mallId);
   const matchingRestaurants = [];
@@ -201,8 +209,7 @@ export function getRestaurantsByCategories(categories, mallId = "sunway_square",
       continue;
     }
 
-    // Override budget tier for specific restaurants when category-based tiers are not accurate.
-    const budgetTier = name === "Ba Shu Jia Yan" ? "Above RM40" : getBudgetTier(category);
+    const budgetTier = getBudgetTierForRestaurant(name, category);
     if (budgetSet && !budgetSet.has(budgetTier)) {
       continue;
     }
