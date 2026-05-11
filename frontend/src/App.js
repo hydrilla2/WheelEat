@@ -12,18 +12,24 @@ import {
   fetchRestaurants,
   recordSpin,
   trackPageView,
-  claimRestaurantVoucher,
-  fetchUserVouchers,
-  fetchVoucherStocks,
+  // Voucher methods disabled:
+  // fetchUserVouchers,
+  // Restaurant-of-the-day voucher method disabled:
+  // claimRestaurantVoucher,
+  // fetchVoucherStocks,
 } from './services/api';
 import Leaderboard from './components/Leaderboard';
-import VoucherOfferModal from './components/VoucherOfferModal';
-import VoucherWalletModal from './components/VoucherWalletModal';
+// Restaurant-of-the-day voucher method disabled:
+// import VoucherOfferModal from './components/VoucherOfferModal';
+// Voucher wallet disabled:
+// import VoucherWalletModal from './components/VoucherWalletModal';
 import AdminVouchers from './components/AdminVouchers';
 import { useSessionTracker } from './hooks/useSessionTracker';
 import { getEffectiveUserId } from './utils/userId';
-import { budgetTiersForRestaurant, getPriceRange } from './data/priceRanges';
-import { getGoogleMapsLink } from './data/googleMapsLinks';
+import { budgetTiersForRestaurant } from './data/priceRanges';
+// Restaurant-of-the-day detail helpers disabled:
+// import { getPriceRange } from './data/priceRanges';
+// import { getGoogleMapsLink } from './data/googleMapsLinks';
 
 function MenuIcon() {
   return (
@@ -65,27 +71,30 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
   const ringAudioRef = useRef(null);
   const clickAudioRef = useRef(null);
 
-  // Restaurant of the day (spotlight)
-  const [showRestaurantList, setShowRestaurantList] = useState(false);
-  const [spotlightIndex, setSpotlightIndex] = useState(0);
-  const [spotlightList, setSpotlightList] = useState([]);
-  const [showFeaturedDetail, setShowFeaturedDetail] = useState(false);
-  const [featuredDetail, setFeaturedDetail] = useState(null);
+  // Vouchers disabled:
+  // const [vouchers, setVouchers] = useState([]);
+  // const [showVoucherWallet, setShowVoucherWallet] = useState(false);
 
-  // Vouchers
-  const [vouchers, setVouchers] = useState([]);
-  const [showVoucherWallet, setShowVoucherWallet] = useState(false);
-  const [showVoucherOffer, setShowVoucherOffer] = useState(false);
-  const [pendingVoucher, setPendingVoucher] = useState(null);
-  const [voucherStockByRestaurant, setVoucherStockByRestaurant] = useState({});
+  // Restaurant of the day (spotlight) disabled:
+  // const [showRestaurantList, setShowRestaurantList] = useState(false);
+  // const [spotlightIndex, setSpotlightIndex] = useState(0);
+  // const [spotlightList, setSpotlightList] = useState([]);
+  // const [showFeaturedDetail, setShowFeaturedDetail] = useState(false);
+  // const [featuredDetail, setFeaturedDetail] = useState(null);
 
-  const promoVouchers = useMemo(
-    () => [{ value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 }],
-    []
-  );
+  // Restaurant-of-the-day voucher claiming disabled:
+  // const [showVoucherOffer, setShowVoucherOffer] = useState(false);
+  // const [pendingVoucher, setPendingVoucher] = useState(null);
+  // const [voucherStockByRestaurant, setVoucherStockByRestaurant] = useState({});
+  // const promoVouchers = useMemo(
+  //   () => [{ value: 'RM 5', minSpend: 'Min spend RM 30', restaurant: 'Ba Shu Jia Yan', left: 10 }],
+  //   []
+  // );
 
-  const effectiveUserId = useMemo(() => getEffectiveUserId(user), [user]);
-  const isGuest = useMemo(() => !user || user.loginType === 'guest', [user]);
+  // Voucher methods disabled:
+  // const effectiveUserId = useMemo(() => getEffectiveUserId(user), [user]);
+  // Restaurant-of-the-day voucher claiming disabled:
+  // const isGuest = useMemo(() => !user || user.loginType === 'guest', [user]);
   const isAdmin = useMemo(() => {
     const email = String(user?.email || '').toLowerCase();
     return (
@@ -249,68 +258,67 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     });
   }, [restaurantsCache, selectedCategories, selectedBudgets, dietaryNeed]);
 
-  // =========================
-  // Vouchers + Restaurant of the day
-  // =========================
+  // Vouchers disabled:
+  // const refreshVouchers = useCallback(async () => {
+  //   try {
+  //     const data = await fetchUserVouchers(effectiveUserId);
+  //     const active = Array.isArray(data?.vouchers)
+  //       ? data.vouchers.filter((v) => v.status === 'active').map((v) => ({ ...v, logo: v.merchant_logo || v.logo || null }))
+  //       : [];
+  //     setVouchers(active);
+  //   } catch (e) {
+  //     console.debug('Failed to load vouchers:', e);
+  //     setVouchers([]);
+  //   }
+  // }, [effectiveUserId]);
 
-  const refreshVouchers = useCallback(async () => {
-    try {
-      const data = await fetchUserVouchers(effectiveUserId);
-      const active = Array.isArray(data?.vouchers)
-        ? data.vouchers.filter((v) => v.status === 'active').map((v) => ({ ...v, logo: v.merchant_logo || v.logo || null }))
-        : [];
-      setVouchers(active);
-    } catch (e) {
-      console.debug('Failed to load vouchers:', e);
-      setVouchers([]);
-    }
-  }, [effectiveUserId]);
+  // Restaurant-of-the-day voucher stock method disabled:
+  // const refreshVoucherStocks = useCallback(async (merchantNames) => {
+  //   try {
+  //     const names = Array.isArray(merchantNames) ? merchantNames.filter(Boolean) : [];
+  //     if (names.length === 0) return;
+  //     const data = await fetchVoucherStocks(names);
+  //     const stocks = data?.stocks || {};
+  //     setVoucherStockByRestaurant((prev) => ({ ...prev, ...stocks }));
+  //   } catch (e) {
+  //     console.debug('Failed to load voucher stocks:', e);
+  //   }
+  // }, []);
 
-  const refreshVoucherStocks = useCallback(async (merchantNames) => {
-    try {
-      const names = Array.isArray(merchantNames) ? merchantNames.filter(Boolean) : [];
-      if (names.length === 0) return;
-      const data = await fetchVoucherStocks(names);
-      const stocks = data?.stocks || {};
-      setVoucherStockByRestaurant((prev) => ({ ...prev, ...stocks }));
-    } catch (e) {
-      console.debug('Failed to load voucher stocks:', e);
-    }
-  }, []);
+  // Voucher loading disabled:
+  // useEffect(() => {
+  //   refreshVouchers();
+  // }, [refreshVouchers]);
 
-  useEffect(() => {
-    refreshVouchers();
-  }, [refreshVouchers]);
+  // useEffect(() => {
+  //   if (!showVoucherWallet) return;
+  //   refreshVouchers();
+  // }, [showVoucherWallet, refreshVouchers]);
 
-  useEffect(() => {
-    if (!showVoucherWallet) return;
-    refreshVouchers();
-  }, [showVoucherWallet, refreshVouchers]);
+  // Restaurant of the day spotlight methods disabled:
+  // useEffect(() => {
+  //   if (!restaurantsCache.length) {
+  //     setSpotlightList([]);
+  //     setSpotlightIndex(0);
+  //     return;
+  //   }
+  //   const featuredPrimary = restaurantsCache.find((r) => r?.name === 'Ba Shu Jia Yan');
+  //   const copy = [featuredPrimary].filter(Boolean);
+  //   if (copy.length === 0) copy.push(...restaurantsCache);
+  //   setSpotlightList(copy.slice(0, 1)); // only show one for "restaurant of the day"
+  //   setSpotlightIndex(0);
+  // }, [restaurantsCache, mallId]);
 
-  // Build the spotlight list from cached restaurants.
-  useEffect(() => {
-    if (!restaurantsCache.length) {
-      setSpotlightList([]);
-      setSpotlightIndex(0);
-      return;
-    }
-    const featuredPrimary = restaurantsCache.find((r) => r?.name === 'Ba Shu Jia Yan');
-    const copy = [featuredPrimary].filter(Boolean);
-    if (copy.length === 0) copy.push(...restaurantsCache);
-    setSpotlightList(copy.slice(0, 1)); // only show one for "restaurant of the day"
-    setSpotlightIndex(0);
-  }, [restaurantsCache, mallId]);
+  // Restaurant-of-the-day voucher stock loading disabled:
+  // useEffect(() => {
+  //   if (!showRestaurantList) return;
+  //   refreshVoucherStocks(spotlightList.map((r) => r?.name));
+  // }, [showRestaurantList, spotlightList, refreshVoucherStocks]);
 
-  // Load voucher stock counts when Restaurant-of-the-day UI is opened.
-  useEffect(() => {
-    if (!showRestaurantList) return;
-    refreshVoucherStocks(spotlightList.map((r) => r?.name));
-  }, [showRestaurantList, spotlightList, refreshVoucherStocks]);
-
-  useEffect(() => {
-    if (!showFeaturedDetail || !featuredDetail?.name) return;
-    refreshVoucherStocks([featuredDetail.name]);
-  }, [showFeaturedDetail, featuredDetail, refreshVoucherStocks]);
+  // useEffect(() => {
+  //   if (!showFeaturedDetail || !featuredDetail?.name) return;
+  //   refreshVoucherStocks([featuredDetail.name]);
+  // }, [showFeaturedDetail, featuredDetail, refreshVoucherStocks]);
 
   const handleSpin = async () => {
     // Guard: prevent concurrent spins.
@@ -407,87 +415,88 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
     setResult(null);
   };
 
-  const handleDeclineVoucher = () => {
-    setShowVoucherOffer(false);
-    setPendingVoucher(null);
-  };
+  // Restaurant-of-the-day voucher claim methods disabled:
+  // const handleDeclineVoucher = () => {
+  //   setShowVoucherOffer(false);
+  //   setPendingVoucher(null);
+  // };
 
-  const handleKeepVoucher = async () => {
-    const merchantName = pendingVoucher?.merchant_name;
-    if (!merchantName) {
-      setShowVoucherOffer(false);
-      setPendingVoucher(null);
-      return;
-    }
-
-    if (isGuest) {
-      setShowVoucherOffer(false);
-      setPendingVoucher(null);
-      onShowLogin();
-      alert('Please sign in with Google to claim this voucher.');
-      return;
-    }
-
-    const currentStock = voucherStockByRestaurant?.[merchantName]?.remaining_qty;
-    const hasActiveVoucher = vouchers.some((v) => String(v.merchant_name) === String(merchantName));
-    if (currentStock !== undefined && currentStock !== null && Number(currentStock) <= 0) {
-      alert('Sorry, there is no voucher left.');
-      setShowVoucherOffer(false);
-      setPendingVoucher(null);
-      return;
-    }
-    if (hasActiveVoucher) {
-      alert('You already claimed this voucher.');
-      setShowVoucherOffer(false);
-      setPendingVoucher(null);
-      return;
-    }
-
-    const merchantLogo = pendingVoucher?.merchant_logo || pendingVoucher?.logo || null;
-    const valueRm = pendingVoucher?.value_rm;
-    const minSpendRm = pendingVoucher?.min_spend_rm;
-
-    try {
-      const out = await claimRestaurantVoucher({
-        userId: effectiveUserId,
-        merchantName,
-        merchantLogo,
-        valueRm,
-        minSpendRm,
-      });
-
-      if (out?.won) {
-        await refreshVouchers();
-        if (out?.remainingQty !== undefined) {
-          setVoucherStockByRestaurant((prev) => ({
-            ...prev,
-            [merchantName]: { ...(prev?.[merchantName] || {}), remaining_qty: Number(out.remainingQty) },
-          }));
-        } else {
-          refreshVoucherStocks([merchantName]);
-        }
-        setShowVoucherOffer(false);
-        setPendingVoucher(null);
-        setShowVoucherWallet(true);
-      } else if (out?.reason === 'sold_out') {
-        alert('Sorry, this restaurant voucher is sold out.');
-        setShowVoucherOffer(false);
-        setPendingVoucher(null);
-      } else if (out?.reason === 'already_has_voucher' || out?.reason === 'already_claimed') {
-        alert('You already claimed this voucher.');
-        setShowVoucherOffer(false);
-        setPendingVoucher(null);
-      } else {
-        alert('No voucher won this time.');
-        setShowVoucherOffer(false);
-        setPendingVoucher(null);
-      }
-    } catch (e) {
-      alert(e?.message || 'Failed to claim voucher');
-      setShowVoucherOffer(false);
-      setPendingVoucher(null);
-    }
-  };
+  // const handleKeepVoucher = async () => {
+  //   const merchantName = pendingVoucher?.merchant_name;
+  //   if (!merchantName) {
+  //     setShowVoucherOffer(false);
+  //     setPendingVoucher(null);
+  //     return;
+  //   }
+  //
+  //   if (isGuest) {
+  //     setShowVoucherOffer(false);
+  //     setPendingVoucher(null);
+  //     onShowLogin();
+  //     alert('Please sign in with Google to claim this voucher.');
+  //     return;
+  //   }
+  //
+  //   const currentStock = voucherStockByRestaurant?.[merchantName]?.remaining_qty;
+  //   const hasActiveVoucher = vouchers.some((v) => String(v.merchant_name) === String(merchantName));
+  //   if (currentStock !== undefined && currentStock !== null && Number(currentStock) <= 0) {
+  //     alert('Sorry, there is no voucher left.');
+  //     setShowVoucherOffer(false);
+  //     setPendingVoucher(null);
+  //     return;
+  //   }
+  //   if (hasActiveVoucher) {
+  //     alert('You already claimed this voucher.');
+  //     setShowVoucherOffer(false);
+  //     setPendingVoucher(null);
+  //     return;
+  //   }
+  //
+  //   const merchantLogo = pendingVoucher?.merchant_logo || pendingVoucher?.logo || null;
+  //   const valueRm = pendingVoucher?.value_rm;
+  //   const minSpendRm = pendingVoucher?.min_spend_rm;
+  //
+  //   try {
+  //     const out = await claimRestaurantVoucher({
+  //       userId: effectiveUserId,
+  //       merchantName,
+  //       merchantLogo,
+  //       valueRm,
+  //       minSpendRm,
+  //     });
+  //
+  //     if (out?.won) {
+  //       await refreshVouchers();
+  //       if (out?.remainingQty !== undefined) {
+  //         setVoucherStockByRestaurant((prev) => ({
+  //           ...prev,
+  //           [merchantName]: { ...(prev?.[merchantName] || {}), remaining_qty: Number(out.remainingQty) },
+  //         }));
+  //       } else {
+  //         refreshVoucherStocks([merchantName]);
+  //       }
+  //       setShowVoucherOffer(false);
+  //       setPendingVoucher(null);
+  //       setShowVoucherWallet(true);
+  //     } else if (out?.reason === 'sold_out') {
+  //       alert('Sorry, this restaurant voucher is sold out.');
+  //       setShowVoucherOffer(false);
+  //       setPendingVoucher(null);
+  //     } else if (out?.reason === 'already_has_voucher' || out?.reason === 'already_claimed') {
+  //       alert('You already claimed this voucher.');
+  //       setShowVoucherOffer(false);
+  //       setPendingVoucher(null);
+  //     } else {
+  //       alert('No voucher won this time.');
+  //       setShowVoucherOffer(false);
+  //       setPendingVoucher(null);
+  //     }
+  //   } catch (e) {
+  //     alert(e?.message || 'Failed to claim voucher');
+  //     setShowVoucherOffer(false);
+  //     setPendingVoucher(null);
+  //   }
+  // };
 
   return (
     <div className="App">
@@ -509,7 +518,10 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 <span className="header-menu-icon" aria-hidden="true">
                   <MenuIcon />
                 </span>
+                {/*
+                Voucher notification disabled:
                 {vouchers.length > 0 ? <span className="header-menu-dot" aria-hidden="true" /> : null}
+                */}
               </button>
 
               {menuOpen ? (
@@ -548,6 +560,8 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                     <span className="header-menu-label">Leaderboard</span>
                   </button>
 
+                  {/*
+                  Voucher wallet menu item disabled:
                   <button
                     type="button"
                     role="menuitem"
@@ -562,6 +576,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                       Vouchers {vouchers.length > 0 ? <span className="header-menu-badge">{vouchers.length}</span> : null}
                     </span>
                   </button>
+                  */}
 
                   {isAdmin ? (
                     <button
@@ -610,6 +625,8 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                 malls={malls}
                 loading={mallsLoading}
               />
+              {/*
+              Restaurant of the day spotlight disabled:
               <div className="spotlight-panel">
                 <div className="spotlight-header">
                   <span className="spotlight-title">Restaurant of the day</span>
@@ -638,10 +655,10 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                       </div>
                       <div className="spotlight-details">
                         <div className="spotlight-name">{spotlightList[spotlightIndex]?.name}</div>
-                      <div className="spotlight-meta">
-                        {spotlightList[spotlightIndex]?.category || 'Category'}
+                        <div className="spotlight-meta">
+                          {spotlightList[spotlightIndex]?.category || 'Category'}
                           {spotlightList[spotlightIndex]?.unit ? ` | ${spotlightList[spotlightIndex]?.unit}` : ''}
-                      </div>
+                        </div>
                       </div>
                     </div>
                   ) : (
@@ -649,6 +666,7 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
                   )}
                 </button>
               </div>
+              */}
               <DietarySelector
                 value={dietaryNeed}
                 onChange={setDietaryNeed}
@@ -739,6 +757,8 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
         />
       )}
 
+      {/*
+      Restaurant of the day modal and voucher collection UI disabled:
       {showRestaurantList ? (
         <div className="restaurant-list-overlay" onClick={() => setShowRestaurantList(false)} role="presentation">
           <div className="restaurant-list-modal" onClick={(e) => e.stopPropagation()}>
@@ -986,8 +1006,12 @@ function WheelEatApp({ user, onLogout, onShowLogin }) {
       {showVoucherOffer ? (
         <VoucherOfferModal voucher={pendingVoucher} onAccept={handleKeepVoucher} onDecline={handleDeclineVoucher} user={user} />
       ) : null}
+      */}
 
+      {/*
+      Voucher wallet modal disabled:
       {showVoucherWallet ? <VoucherWalletModal vouchers={vouchers} onClose={() => setShowVoucherWallet(false)} /> : null}
+      */}
     </div>
   );
 }
